@@ -2,7 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Glasses, Plus, Edit2, Trash2, Search, X, Save, Upload, Image as ImageIcon } from 'lucide-react';
+import { 
+  Glasses, Plus, Edit2, Trash2, Search, X, Save, Upload, 
+  Image as ImageIcon, Filter, RotateCcw, ArrowUpDown, SlidersHorizontal, Check 
+} from 'lucide-react';
 import { productService } from '@/services/productService';
 import { categoryService } from '@/services/categoryService';
 import { brandService } from '@/services/brandService';
@@ -22,16 +25,27 @@ export default function ProductsListPage() {
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  // States bộ lọc & tìm kiếm
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('ALL');
+  const [selectedBrand, setSelectedBrand] = useState('ALL');
+  const [selectedStatus, setSelectedStatus] = useState('ALL');
+  const [selectedPriceRange, setSelectedPriceRange] = useState('ALL');
+  const [sortBy, setSortBy] = useState('ID_DESC');
+
+  // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const productsPerPage = 8;
+
+  // Modal Sửa
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState(null);
 
-  // Reset về trang 1 khi tìm kiếm
+  // Tự động nhảy về trang 1 khi bất kỳ điều kiện lọc nào thay đổi
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchQuery]);
+  }, [searchQuery, selectedCategory, selectedBrand, selectedStatus, selectedPriceRange, sortBy]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -160,9 +174,79 @@ export default function ProductsListPage() {
     }
   };
 
-  const filteredProducts = products.filter((p) =>
-    p.name?.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Logic lọc và sắp xếp toàn diện
+  const filteredProducts = products.filter((p) => {
+    // 1. Tìm theo tên hoặc ID
+    const q = searchQuery.toLowerCase().trim().replace(/^#/, '');
+    const matchesSearch = !q || 
+      p.name?.toLowerCase().includes(q) ||
+      p.id?.toString().includes(q);
+
+    // 2. Lọc theo Danh mục
+    const catId = p.category?.id || p.categoryId;
+    const matchesCategory = selectedCategory === 'ALL' || catId?.toString() === selectedCategory.toString();
+
+    // 3. Lọc theo Thương hiệu
+    const brandId = p.brand?.id || p.brandId;
+    const matchesBrand = selectedBrand === 'ALL' || brandId?.toString() === selectedBrand.toString();
+
+    // 4. Lọc theo Trạng thái (1: Đang bán, 0: Ẩn)
+    const matchesStatus = selectedStatus === 'ALL' || p.status?.toString() === selectedStatus.toString();
+
+    // 5. Lọc theo Khoảng giá
+    const price = Number(p.price) || 0;
+    let matchesPrice = true;
+    if (selectedPriceRange === 'UNDER_2M') {
+      matchesPrice = price < 2000000;
+    } else if (selectedPriceRange === '2M_4M') {
+      matchesPrice = price >= 2000000 && price <= 4000000;
+    } else if (selectedPriceRange === '4M_6M') {
+      matchesPrice = price >= 4000000 && price <= 6000000;
+    } else if (selectedPriceRange === 'OVER_6M') {
+      matchesPrice = price > 6000000;
+    }
+
+    return matchesSearch && matchesCategory && matchesBrand && matchesStatus && matchesPrice;
+  }).sort((a, b) => {
+    const priceA = Number(a.price) || 0;
+    const priceB = Number(b.price) || 0;
+    const idA = Number(a.id) || 0;
+    const idB = Number(b.id) || 0;
+
+    switch (sortBy) {
+      case 'ID_DESC':
+        return idB - idA;
+      case 'ID_ASC':
+        return idA - idB;
+      case 'PRICE_ASC':
+        return priceA - priceB;
+      case 'PRICE_DESC':
+        return priceB - priceA;
+      case 'NAME_ASC':
+        return (a.name || '').localeCompare(b.name || '', 'vi');
+      case 'NAME_DESC':
+        return (b.name || '').localeCompare(a.name || '', 'vi');
+      default:
+        return idB - idA;
+    }
+  });
+
+  const hasActiveFilters = searchQuery !== '' || 
+    selectedCategory !== 'ALL' || 
+    selectedBrand !== 'ALL' || 
+    selectedStatus !== 'ALL' || 
+    selectedPriceRange !== 'ALL' || 
+    sortBy !== 'ID_DESC';
+
+  const handleResetFilters = () => {
+    setSearchQuery('');
+    setSelectedCategory('ALL');
+    setSelectedBrand('ALL');
+    setSelectedStatus('ALL');
+    setSelectedPriceRange('ALL');
+    setSortBy('ID_DESC');
+    setCurrentPage(1);
+  };
 
   const totalPages = Math.ceil(filteredProducts.length / productsPerPage);
   const indexOfLastProduct = currentPage * productsPerPage;
@@ -189,16 +273,172 @@ export default function ProductsListPage() {
         </Link>
       </div>
 
-      {/* Search Input Bar */}
-      <div className="relative max-w-md">
-        <input
-          type="text"
-          placeholder="Tìm kiếm sản phẩm theo tên..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full bg-white text-slate-900 text-xs pl-10 pr-4 py-3 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-900"
-        />
-        <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-500" />
+      {/* BỘ LỌC TOÀN DIỆN (Filter Control Panel) */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-4 shadow-sm space-y-3">
+        {/* Hàng 1: Ô tìm kiếm và các dropdown lọc */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
+          {/* 1. Ô tìm kiếm theo tên hoặc mã ID */}
+          <div className="relative lg:col-span-2">
+            <input
+              type="text"
+              placeholder="Tìm theo tên sản phẩm hoặc mã #ID..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-50 text-slate-900 text-xs pl-9 pr-8 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-900 transition-colors"
+            />
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5 cursor-pointer"
+                title="Xóa từ khóa"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          {/* 2. Lọc theo Danh mục */}
+          <div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="w-full bg-slate-50 text-slate-800 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-900 cursor-pointer font-medium"
+            >
+              <option value="ALL">Tất cả danh mục</option>
+              {categories.map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 3. Lọc theo Thương hiệu */}
+          <div>
+            <select
+              value={selectedBrand}
+              onChange={(e) => setSelectedBrand(e.target.value)}
+              className="w-full bg-slate-50 text-slate-800 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-900 cursor-pointer font-medium"
+            >
+              <option value="ALL">Tất cả thương hiệu</option>
+              {brands.map((b) => (
+                <option key={b.id} value={b.id}>{b.name}</option>
+              ))}
+            </select>
+          </div>
+
+          {/* 4. Lọc theo Trạng thái */}
+          <div>
+            <select
+              value={selectedStatus}
+              onChange={(e) => setSelectedStatus(e.target.value)}
+              className="w-full bg-slate-50 text-slate-800 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-900 cursor-pointer font-medium"
+            >
+              <option value="ALL">Tất cả trạng thái</option>
+              <option value="1">Đang bán</option>
+              <option value="0">Ẩn / Ngừng bán</option>
+            </select>
+          </div>
+
+          {/* 5. Lọc theo Khoảng giá */}
+          <div>
+            <select
+              value={selectedPriceRange}
+              onChange={(e) => setSelectedPriceRange(e.target.value)}
+              className="w-full bg-slate-50 text-slate-800 text-xs px-3 py-2.5 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-900 cursor-pointer font-medium"
+            >
+              <option value="ALL">Tất cả mức giá</option>
+              <option value="UNDER_2M">Dưới 2.000.000 đ</option>
+              <option value="2M_4M">2.000.000 - 4.000.000 đ</option>
+              <option value="4M_6M">4.000.000 - 6.000.000 đ</option>
+              <option value="OVER_6M">Trên 6.000.000 đ</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Hàng 2: Thống kê số lượng, Badges điều kiện lọc & Sắp xếp */}
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-2.5 border-t border-slate-100 text-xs">
+          {/* Active Chips & Số lượng sản phẩm tìm thấy */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-slate-500 font-medium">
+              Hiển thị <strong className="text-slate-900 font-bold">{filteredProducts.length}</strong> / {products.length} sản phẩm
+            </span>
+
+            {/* Chip Danh mục */}
+            {selectedCategory !== 'ALL' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
+                DM: {categories.find(c => c.id.toString() === selectedCategory.toString())?.name || selectedCategory}
+                <button onClick={() => setSelectedCategory('ALL')} className="hover:text-rose-500 cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {/* Chip Thương hiệu */}
+            {selectedBrand !== 'ALL' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
+                Hiệu: {brands.find(b => b.id.toString() === selectedBrand.toString())?.name || selectedBrand}
+                <button onClick={() => setSelectedBrand('ALL')} className="hover:text-rose-500 cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {/* Chip Trạng thái */}
+            {selectedStatus !== 'ALL' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
+                {selectedStatus === '1' ? 'Đang bán' : 'Ẩn'}
+                <button onClick={() => setSelectedStatus('ALL')} className="hover:text-rose-500 cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {/* Chip Giá */}
+            {selectedPriceRange !== 'ALL' && (
+              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700 font-semibold text-[11px] border border-slate-200">
+                Giá: {
+                  selectedPriceRange === 'UNDER_2M' ? '< 2 triệu' :
+                  selectedPriceRange === '2M_4M' ? '2M - 4M' :
+                  selectedPriceRange === '4M_6M' ? '4M - 6M' : '> 6 triệu'
+                }
+                <button onClick={() => setSelectedPriceRange('ALL')} className="hover:text-rose-500 cursor-pointer">
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+
+            {/* Nút Xóa tất cả bộ lọc */}
+            {hasActiveFilters && (
+              <button
+                onClick={handleResetFilters}
+                className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-600 hover:text-rose-700 hover:underline px-2 py-0.5 ml-1 cursor-pointer"
+              >
+                <RotateCcw className="w-3 h-3" />
+                <span>Đặt lại bộ lọc</span>
+              </button>
+            )}
+          </div>
+
+          {/* Sắp xếp */}
+          <div className="flex items-center gap-2 ml-auto">
+            <span className="text-slate-500 font-medium flex items-center gap-1">
+              <ArrowUpDown className="w-3.5 h-3.5 text-slate-400" />
+              Sắp xếp:
+            </span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="bg-slate-50 text-slate-800 text-xs px-3 py-1.5 rounded-xl border border-slate-200 focus:outline-none focus:border-slate-900 cursor-pointer font-medium"
+            >
+              <option value="ID_DESC">Mới nhất (Mặc định)</option>
+              <option value="ID_ASC">Cũ nhất</option>
+              <option value="PRICE_ASC">Giá: Thấp đến cao</option>
+              <option value="PRICE_DESC">Giá: Cao đến thấp</option>
+              <option value="NAME_ASC">Tên: A - Z</option>
+              <option value="NAME_DESC">Tên: Z - A</option>
+            </select>
+          </div>
+        </div>
       </div>
 
       {/* Products List Table */}
@@ -226,7 +466,25 @@ export default function ProductsListPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-800/80 text-slate-700">
-              {currentProducts.map((p) => {
+              {currentProducts.length === 0 ? (
+                <tr>
+                  <td colSpan="9" className="p-12 text-center text-slate-500">
+                    <div className="flex flex-col items-center justify-center gap-2">
+                      <SlidersHorizontal className="w-8 h-8 text-slate-300" />
+                      <span className="font-bold text-sm text-slate-700">Không tìm thấy sản phẩm nào phù hợp</span>
+                      <span className="text-xs text-slate-400">Hãy thử thay đổi từ khóa hoặc đặt lại bộ lọc</span>
+                      {hasActiveFilters && (
+                        <button
+                          onClick={handleResetFilters}
+                          className="mt-2 px-3.5 py-1.5 bg-slate-900 text-white rounded-xl text-xs font-bold hover:bg-slate-800 transition-colors cursor-pointer"
+                        >
+                          Đặt lại bộ lọc
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ) : currentProducts.map((p) => {
                 const raw = (p.images && p.images.length > 0) ? p.images[0].imageUrl : p.imageUrl;
                 const fallbackIdx = (Number(p.id) || 1) % SAFE_EYEWEAR_PHOTOS.length;
                 const safeFallback = SAFE_EYEWEAR_PHOTOS[fallbackIdx];
