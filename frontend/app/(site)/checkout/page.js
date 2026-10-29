@@ -223,16 +223,8 @@ export default function CheckoutPage() {
       setLoading(false);
 
       if (paymentMethod === 'VNPAY') {
-        try {
-          const payRes = await fetchApi(`/public/payment/create-vnpay?orderId=${newOrderObj.id}&amount=${Math.round(checkoutTotal)}`);
-          const payData = payRes?.data || payRes;
-          if (payData && payData.paymentUrl) {
-            window.location.href = payData.paymentUrl;
-            return;
-          }
-        } catch (payErr) {
-          console.error("Lỗi tạo cổng thanh toán VNPAY:", payErr);
-        }
+        window.location.href = `/vnpay-mock?orderId=${newOrderObj.id}&amount=${Math.round(checkoutTotal)}`;
+        return;
       }
 
       window.location.href = `/order-success/${newOrderObj.id}`;
