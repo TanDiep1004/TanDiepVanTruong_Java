@@ -196,7 +196,7 @@ export default function CheckoutPage() {
       localStorage.setItem('placed_orders', JSON.stringify(existingOrders));
     } catch (err) {}
 
-    const finishCheckout = () => {
+    const finishCheckout = async () => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('checkout_selected_items');
       }
@@ -206,6 +206,20 @@ export default function CheckoutPage() {
         clearCart();
       }
       setLoading(false);
+
+      if (paymentMethod === 'VNPAY') {
+        try {
+          const payRes = await fetchApi(`/public/payment/create-vnpay?orderId=${newOrderObj.id}&amount=${Math.round(checkoutTotal)}`);
+          const payData = payRes?.data || payRes;
+          if (payData && payData.paymentUrl) {
+            window.location.href = payData.paymentUrl;
+            return;
+          }
+        } catch (payErr) {
+          console.error("Lỗi tạo cổng thanh toán VNPAY:", payErr);
+        }
+      }
+
       window.location.href = `/order-success/${newOrderObj.id}`;
     };
 
@@ -415,6 +429,30 @@ export default function CheckoutPage() {
                 <div>
                   <div className="font-bold text-slate-900">Chuyển khoản Ngân hàng (QR Code VietQR)</div>
                   <div className="text-[11px] text-slate-500">Quét mã QR thanh toán nhanh qua ứng dụng ngân hàng</div>
+                </div>
+              </label>
+
+              <label className={`flex items-center gap-3 p-4 rounded-xl border cursor-pointer transition-all ${
+                paymentMethod === 'VNPAY' ? 'bg-blue-500/10 border-blue-500/50 text-slate-900 ring-1 ring-blue-500/30' : 'bg-slate-100/60 border-slate-300 text-slate-500'
+              }`}>
+                <input
+                  type="radio"
+                  name="payment"
+                  value="VNPAY"
+                  checked={paymentMethod === 'VNPAY'}
+                  onChange={() => setPaymentMethod('VNPAY')}
+                  className="accent-blue-600"
+                />
+                <div className="flex-1">
+                  <div className="font-bold text-slate-900 flex items-center gap-2">
+                    <span>Cổng thanh toán online VNPAY</span>
+                    <span className="px-2 py-0.5 text-[10px] bg-blue-600 text-white font-extrabold rounded-md shadow-sm">
+                      SANDBOX TEST
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-500">
+                    Hỗ trợ quét mã VNPAY-QR, Thẻ ATM Nội địa (NCB, Vietcombank, Techcombank...), Thẻ quốc tế Visa/Mastercard
+                  </div>
                 </div>
               </label>
             </div>
