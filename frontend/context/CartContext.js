@@ -94,7 +94,14 @@ export function CartProvider({ children }) {
 
     setCartItems((prev) => {
       const existingIndex = prev.findIndex(
-        (item) => item.product.id === product.id && item.variant?.id === variant?.id
+        (item) =>
+          item.product.id === product.id &&
+          ((variant?.id && item.variant?.id === variant.id) ||
+            (item.variant?.color === variant?.color &&
+              item.variant?.degree === variant?.degree &&
+              item.variant?.material === variant?.material &&
+              item.variant?.feature === variant?.feature &&
+              item.variant?.size === variant?.size))
       );
 
       let updated;

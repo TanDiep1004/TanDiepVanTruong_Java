@@ -477,8 +477,14 @@ export default function CheckoutPage() {
                 <div key={idx} className="pt-2 first:pt-0 flex items-center justify-between text-xs">
                   <div>
                     <div className="font-bold text-slate-900">{item.product.name}</div>
-                    <div className="text-[11px] text-slate-500">
-                      Màu: {item.variant?.color || 'Đen'} | Độ: {item.variant?.degree || '0.00'} | x{item.quantity}
+                    <div className="text-[11px] text-slate-500 leading-tight mt-0.5">
+                      {[
+                        item.variant?.color && `Màu: ${item.variant.color}`,
+                        item.variant?.material && `Gọng: ${item.variant.material}`,
+                        item.variant?.size && `Size: ${item.variant.size}`,
+                        item.variant?.feature && `Tròng: ${item.variant.feature}`,
+                        item.variant?.degree && `Độ: ${item.variant.degree}`,
+                      ].filter(Boolean).join(' • ')} | x{item.quantity}
                     </div>
                   </div>
                   <div className="font-bold text-slate-900">

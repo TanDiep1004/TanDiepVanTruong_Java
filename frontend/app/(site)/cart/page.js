@@ -199,9 +199,18 @@ export default function CartPage() {
                       <div className="text-xs text-slate-900 font-semibold mt-0.5">
                         Thương hiệu: {item.product.brand?.name || 'Ray-Ban'}
                       </div>
-                      <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-2">
-                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-300">Màu: {item.variant?.color || 'Đen Nhám'}</span>
-                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-300">Độ: {item.variant?.degree || '0.00'}</span>
+                      <div className="text-[11px] text-slate-500 mt-1 flex flex-wrap gap-1.5">
+                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-300 font-semibold text-slate-800">Màu: {item.variant?.color || 'Đen Nhám'}</span>
+                        {item.variant?.material && (
+                          <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-300 text-slate-700">Chất liệu: {item.variant.material}</span>
+                        )}
+                        {item.variant?.size && (
+                          <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-300 text-slate-700">Size: {item.variant.size}</span>
+                        )}
+                        {item.variant?.feature && (
+                          <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-300 text-slate-700">Tròng: {item.variant.feature}</span>
+                        )}
+                        <span className="px-2 py-0.5 rounded bg-slate-100 border border-slate-300 text-slate-700">Độ: {item.variant?.degree || '0.00'}</span>
                       </div>
                     </div>
                   </div>

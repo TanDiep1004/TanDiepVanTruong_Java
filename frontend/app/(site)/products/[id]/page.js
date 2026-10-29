@@ -4,7 +4,8 @@ import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Star, ShoppingBag, CreditCard, CheckCircle2, ArrowLeft, 
-  ChevronLeft, ChevronRight, Glasses, Ruler, ShieldCheck, Check, Layers 
+  ChevronLeft, ChevronRight, Glasses, ShieldCheck, Check, 
+  RotateCcw, Award, Truck, Sparkles
 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
@@ -20,18 +21,75 @@ export default function ProductDetailPage({ params }) {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState('');
-  const [selectedColor, setSelectedColor] = useState('');
-  const [selectedDegree, setSelectedDegree] = useState('');
   const [quantity, setQuantity] = useState(1);
-  const [activeSpecTab, setActiveSpecTab] = useState('SPECS'); // 'SPECS', 'DIMENSIONS', 'FEATURES'
+
+  // Các nhóm tùy chọn tương tác trực quan (Interactive Option Selectors)
+  const [selectedColor, setSelectedColor] = useState('Đen Nhám Tròng Prizm Black');
+  const [selectedMaterial, setSelectedMaterial] = useState({ name: 'Nhựa Acetate Cao Cấp', price: 0 });
+  const [selectedShape, setSelectedShape] = useState('Phi Công (Aviator)');
+  const [selectedSize, setSelectedSize] = useState('Tiêu Chuẩn (52-18-140mm)');
+  const [selectedFeature, setSelectedFeature] = useState({ name: 'Tròng Tiêu Chuẩn CR-39 UV400', price: 0 });
+  const [selectedDegree, setSelectedDegree] = useState({ name: '0.00 (Không độ / Thời trang)', price: 0 });
+
+  // Danh mục tùy chọn có sẵn
+  const defaultColors = [
+    'Đen Nhám Tròng Prizm Black',
+    'Xanh Navy Tròng Prizm Sapphire',
+    'Đen Nhám (Matte Black)',
+    'Vàng Kim (Gold)',
+    'Đồi Mồi (Tortoise Havana)',
+    'Bạc Sang Trọng (Silver)',
+    'Xám Trong Suốt (Crystal Grey)'
+  ];
+
+  const materialOptions = [
+    { name: 'Nhựa Acetate Cao Cấp', price: 0 },
+    { name: 'Titanium Siêu Nhẹ (Chống gỉ sét)', price: 500000 },
+    { name: 'Nhựa dẻo TR90 Siêu bền', price: 150000 },
+    { name: 'Kim loại mạ Crom / Niken', price: 100000 },
+    { name: 'Hợp kim Nhôm - Magie Thể Thao', price: 350000 }
+  ];
+
+  const shapeOptions = [
+    'Phi Công (Aviator)',
+    'Vuông (Square)',
+    'Tròn (Round)',
+    'Chữ Nhật (Rectangle)',
+    'Mắt Mèo (Cat-Eye)',
+    'Đa Giác (Polygon)'
+  ];
+
+  const sizeOptions = [
+    'Tiêu Chuẩn (52-18-140mm)',
+    'Cỡ Nhỏ (50-16-135mm)',
+    'Cỡ Vừa (54-18-145mm)',
+    'Cỡ Lớn Aviator (58-14-145mm)'
+  ];
+
+  const featureOptions = [
+    { name: 'Tròng Tiêu Chuẩn CR-39 UV400', price: 0 },
+    { name: 'Lọc Ánh Sáng Xanh BlueControl', price: 300000 },
+    { name: 'Tròng Đổi Màu Transitions Gen 8 Khi Ra Nắng', price: 650000 },
+    { name: 'Phủ Váng AR Giảm Chói Ban Đêm & UV400', price: 200000 },
+    { name: 'Phân Cực Polarized Chống Chói Lóa Mắt', price: 400000 },
+    { name: 'Phủ Lớp Nano Hard-Coat Chống Trầy', price: 150000 }
+  ];
+
+  const degreeOptions = [
+    { name: '0.00 (Không độ / Thời trang)', price: 0 },
+    { name: 'Cận 1.00 - 1.50 độ', price: 100000 },
+    { name: 'Cận 2.00 - 2.50 độ', price: 150000 },
+    { name: 'Cận 3.00 - 4.00 độ', price: 200000 },
+    { name: 'Cắt theo toa riêng bác sĩ', price: 250000 }
+  ];
 
   useEffect(() => {
     async function loadProductDetail() {
       // 1. Fetch from backend API
       try {
         const res = await productService.getProductById(productId);
-        if (res.data) {
-          const raw = res.data;
+        if (res && (res.data || res.product)) {
+          const raw = res.data?.product ? res.data : (res.product ? res : res.data);
           const baseProduct = raw.product || raw;
           const imagesList = raw.images || baseProduct.images || [];
           const variantsList = raw.variants || baseProduct.variants || [];
@@ -50,9 +108,8 @@ export default function ProductDetailPage({ params }) {
             setSelectedImage(fullObj.imageUrl);
           }
 
-          if (variantsList.length > 0) {
-            if (variantsList[0].color) setSelectedColor(variantsList[0].color);
-            if (variantsList[0].degree) setSelectedDegree(variantsList[0].degree);
+          if (variantsList.length > 0 && variantsList[0].color) {
+            setSelectedColor(variantsList[0].color);
           }
 
           setLoading(false);
@@ -65,15 +122,14 @@ export default function ProductDetailPage({ params }) {
       // 2. Try stored_products in localStorage
       try {
         const storedProds = JSON.parse(localStorage.getItem('stored_products') || '[]');
-        const found = storedProds.find(p => p.id.toString() === productId.toString());
+        const found = storedProds.find(p => p.id?.toString() === productId?.toString());
         if (found) {
           setProduct(found);
           if (found.images && found.images.length > 0) {
             setSelectedImage(found.images[0].imageUrl);
           }
-          if (found.variants && found.variants.length > 0) {
-            if (found.variants[0].color) setSelectedColor(found.variants[0].color);
-            if (found.variants[0].degree) setSelectedDegree(found.variants[0].degree);
+          if (found.variants && found.variants.length > 0 && found.variants[0].color) {
+            setSelectedColor(found.variants[0].color);
           }
           setLoading(false);
           return;
@@ -85,7 +141,7 @@ export default function ProductDetailPage({ params }) {
         id: productId,
         name: 'Kính Râm Ray-Ban Aviator Classic RB3025 G-15',
         description: 'Mẫu kính râm huyền thoại Ray-Ban Aviator RB3025 gọng kim loại sang trọng, tròng kính G-15 chống 100% tia UV400 bảo vệ mắt tuyệt đối.',
-        content: 'Chất liệu gọng: Titanium mạ vàng, Kích thước: 58-14-135, Xuất xứ: Ý',
+        content: '<p>Kính Mát Ray-Ban Aviator Classic RB3025 là biểu tượng vượt thời gian mang lại phong cách lịch lãm, hiện đại cùng khả năng quang học vượt trội.</p>',
         price: 3250000,
         originalPrice: 4100000,
         brand: { name: 'Ray-Ban' },
@@ -95,15 +151,12 @@ export default function ProductDetailPage({ params }) {
           { imageUrl: 'https://images.unsplash.com/photo-1572635196237-14b3f281503f?q=80&w=800', isPrimary: 0 },
         ],
         variants: [
-          { id: 101, color: 'Đen Nhám', degree: '0.00 (Không độ)', price: 3250000, stockQuantity: 50 },
-          { id: 102, color: 'Vàng Kim', degree: '0.00 (Không độ)', price: 3550000, stockQuantity: 30 },
-          { id: 103, color: 'Đen Nhám', degree: '1.50 độ', price: 3450000, stockQuantity: 15 },
+          { id: 101, color: 'Đen Nhám Tròng Prizm Black', degree: '0.00 (Không độ)', price: 3250000, stockQuantity: 50 },
+          { id: 102, color: 'Xanh Navy Tròng Prizm Sapphire', degree: '0.00 (Không độ)', price: 3550000, stockQuantity: 30 },
         ]
       };
       setProduct(fallback);
       setSelectedImage(fallback.images[0].imageUrl);
-      setSelectedColor(fallback.variants[0].color);
-      setSelectedDegree(fallback.variants[0].degree);
       setLoading(false);
     }
     loadProductDetail();
@@ -114,59 +167,60 @@ export default function ProductDetailPage({ params }) {
       <div className="min-h-[60vh] flex items-center justify-center text-slate-500">
         <div className="flex items-center gap-3">
           <div className="w-5 h-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin"></div>
-          <span>Đang tải thông tin chi tiết kính...</span>
+          <span>Đang tải thông tin kính...</span>
         </div>
       </div>
     );
   }
 
-  // Danh sách màu sắc thực tế từ biến thể sản phẩm
-  const colorOptions = Array.from(
-    new Set(
-      product.variants && product.variants.length > 0
-        ? product.variants.map((v) => v.color).filter(Boolean)
-        : ['Đen Nhám', 'Vàng Kim', 'Bạc Sang Trọng']
-    )
-  );
+  // Hợp nhất danh sách màu sắc từ database và danh mục chuẩn
+  const variantColors = product.variants ? product.variants.map(v => v.color).filter(Boolean) : [];
+  const colorOptions = Array.from(new Set([...variantColors, ...defaultColors]));
 
-  // Danh sách độ cận thực tế từ biến thể sản phẩm
-  const degreeOptions = Array.from(
-    new Set(
-      product.variants && product.variants.length > 0
-        ? product.variants.map((v) => v.degree).filter(Boolean)
-        : ['0.00 (Không độ)', '1.50 độ', '2.00 độ', '3.00 độ']
-    )
-  );
+  // Tính toán đơn giá realtime: Giá gốc sản phẩm + Phụ phí tùy chọn (Chất liệu + Tính năng tròng + Độ cận)
+  const basePrice = product.price ? Number(product.price) : 1500000;
+  const extraSurcharge = (selectedMaterial?.price || 0) + (selectedFeature?.price || 0) + (selectedDegree?.price || 0);
+  const displayPrice = basePrice + extraSurcharge;
+  const originalPrice = product.originalPrice 
+    ? Number(product.originalPrice) + extraSurcharge 
+    : Math.round(displayPrice * 1.25);
+  const discountPercent = originalPrice > displayPrice 
+    ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100) 
+    : 0;
 
-  const activeColor = selectedColor || colorOptions[0] || 'Đen Nhám';
-  const activeDegree = selectedDegree || degreeOptions[0] || '0.00 (Không độ)';
+  const stockQuantity = product.stockQuantity ?? 50;
 
-  // Tìm biến thể khớp với màu sắc và độ cận đang chọn
-  const matchedVariant = product.variants?.find(
-    (v) => (v.color || colorOptions[0]) === activeColor && (v.degree || degreeOptions[0]) === activeDegree
-  );
-
-  // Đơn giá thay đổi realtime theo biến thể chọn
-  const displayPrice = matchedVariant?.price ? Number(matchedVariant.price) : (product.price ? Number(product.price) : 1500000);
-  const originalPrice = product.originalPrice && product.originalPrice > displayPrice ? Number(product.originalPrice) : null;
-  const discountPercent = originalPrice ? Math.round(((originalPrice - displayPrice) / originalPrice) * 100) : 0;
-  
-  const stockQuantity = matchedVariant?.stockQuantity ?? 50;
+  // Gom đầy đủ các tùy chọn người dùng đã chọn
+  const buildSelectedVariant = () => {
+    return {
+      id: `${product.id}-${selectedColor}-${selectedMaterial.name}-${selectedSize}-${selectedDegree.name}`.replace(/\s+/g, '-'),
+      color: selectedColor,
+      material: selectedMaterial.name,
+      shape: selectedShape,
+      size: selectedSize,
+      feature: selectedFeature.name,
+      degree: selectedDegree.name,
+      price: displayPrice,
+      variantName: `${selectedColor} • ${selectedMaterial.name} • ${selectedShape} • ${selectedSize} • ${selectedFeature.name} • ${selectedDegree.name}`
+    };
+  };
 
   const handleAddToCart = () => {
-    const added = addToCart(product, matchedVariant || { color: activeColor, degree: activeDegree, price: displayPrice }, quantity);
+    const variantPayload = buildSelectedVariant();
+    const added = addToCart(product, variantPayload, quantity);
     if (added && toastCtx?.showToast) {
       toastCtx.showToast({
         type: 'success',
         title: 'Đã Thêm Vào Giỏ Hàng!',
-        message: `${quantity}x ${product.name} (${activeColor}, ${activeDegree})`,
+        message: `${quantity}x ${product.name} (${selectedColor}, ${selectedMaterial.name}, ${selectedFeature.name})`,
         image: selectedImage || (product.images?.[0]?.imageUrl),
       });
     }
   };
 
   const handleBuyNow = () => {
-    const added = addToCart(product, matchedVariant || { color: activeColor, degree: activeDegree, price: displayPrice }, quantity);
+    const variantPayload = buildSelectedVariant();
+    const added = addToCart(product, variantPayload, quantity);
     if (added) {
       router.push('/checkout');
     }
@@ -199,7 +253,7 @@ export default function ProductDetailPage({ params }) {
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-        {/* Left Column: Image Gallery with Interactive Thumbnails */}
+        {/* CỘT TRÁI: Thư viện hình ảnh sản phẩm */}
         <div className="space-y-4">
           <div className="relative aspect-square rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-2xl flex items-center justify-center p-8 group">
             <img
@@ -211,7 +265,7 @@ export default function ProductDetailPage({ params }) {
               Chính hãng 100%
             </span>
 
-            {/* Navigation Arrows for Images */}
+            {/* Nút điều hướng ảnh */}
             {imagesList.length > 1 && (
               <>
                 <button
@@ -233,7 +287,6 @@ export default function ProductDetailPage({ params }) {
               </>
             )}
 
-            {/* Image Indicator Badge */}
             {imagesList.length > 1 && (
               <span className="absolute bottom-4 right-4 bg-slate-50/80 backdrop-blur-md text-slate-900 font-extrabold text-xs px-3 py-1 rounded-full border border-slate-200">
                 Góc chụp {currentImgIndex + 1} / {imagesList.length}
@@ -241,7 +294,7 @@ export default function ProductDetailPage({ params }) {
             )}
           </div>
 
-          {/* Interactive Thumbnails list with buttons */}
+          {/* Thumbnail ảnh nhỏ chọn xem trực tiếp */}
           {imagesList.length > 1 && (
             <div className="space-y-2">
               <div className="flex items-center justify-between text-xs font-bold text-slate-500">
@@ -268,9 +321,41 @@ export default function ProductDetailPage({ params }) {
               </div>
             </div>
           )}
+
+          {/* Cam kết thương hiệu & dịch vụ */}
+          <div className="grid grid-cols-2 gap-3 pt-4 text-xs">
+            <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl">
+              <Award className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <strong className="block text-slate-900 font-bold">100% Chính Hãng</strong>
+                <span className="text-slate-500 text-[11px]">Đầy đủ hộp, thẻ bảo hành</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl">
+              <RotateCcw className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <strong className="block text-slate-900 font-bold">Đổi Trả 7 Ngày</strong>
+                <span className="text-slate-500 text-[11px]">Miễn phí nếu không vừa ý</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl">
+              <Truck className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <strong className="block text-slate-900 font-bold">Giao Hỏa Tốc</strong>
+                <span className="text-slate-500 text-[11px]">Nội thành nhận trong 2H</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 p-3 bg-white border border-slate-200 rounded-2xl">
+              <ShieldCheck className="w-5 h-5 text-emerald-600 shrink-0" />
+              <div>
+                <strong className="block text-slate-900 font-bold">Bảo Hành 12 Tháng</strong>
+                <span className="text-slate-500 text-[11px]">Cân chỉnh gọng trọn đời</span>
+              </div>
+            </div>
+          </div>
         </div>
 
-        {/* Right Product Information */}
+        {/* CỘT PHẢI: BỘ CHỌN TÙY CHỌN ĐẶC TẢ KỸ THUẬT MẮT KÍNH TRỰC QUAN */}
         <div className="space-y-6">
           <div className="space-y-2">
             <div className="flex items-center gap-3">
@@ -291,11 +376,11 @@ export default function ProductDetailPage({ params }) {
             </div>
           </div>
 
-          {/* Price & Stock Display */}
+          {/* Hiển thị giá bán & Trạng thái kho */}
           <div className="bg-white/90 border border-slate-200 p-5 rounded-2xl space-y-2">
             <div className="flex items-baseline gap-4">
               <span className="text-3xl font-black text-slate-900">{displayPrice.toLocaleString('vi-VN')} VNĐ</span>
-              {originalPrice && (
+              {originalPrice && originalPrice > displayPrice && (
                 <>
                   <span className="text-sm text-slate-500 line-through font-medium">
                     {originalPrice.toLocaleString('vi-VN')} VNĐ
@@ -318,57 +403,210 @@ export default function ProductDetailPage({ params }) {
             </div>
           </div>
 
-          {/* Color Selection */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase">
-              Màu sắc gọng: <span className="text-slate-900 font-black">{activeColor}</span>
+          {/* ========================================================== */}
+          {/* CÁC NHÓM TÙY CHỌN ĐẶC TẢ KỸ THUẬT MẮT KÍNH CHO NGƯỜI DÙNG CHỌN */}
+          {/* ========================================================== */}
+
+          {/* 1. MÀU SẮC GỌNG & TRÒNG (FRAME & LENS COLOR) */}
+          <div className="space-y-2.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+              MÀU SẮC GỌNG: <span className="text-slate-900 font-black">{selectedColor.toUpperCase()}</span>
             </label>
-            <div className="flex flex-wrap gap-2">
-              {colorOptions.map((col) => (
-                <button
-                  key={col}
-                  type="button"
-                  onClick={() => setSelectedColor(col)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeColor === col
-                      ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  {col}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2.5">
+              {colorOptions.map((col) => {
+                const isSelected = selectedColor === col;
+                return (
+                  <button
+                    key={col}
+                    type="button"
+                    onClick={() => setSelectedColor(col)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    {col}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Degree Selection */}
-          <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase">
-              Tùy chọn độ cận / Tròng: <span className="text-slate-900 font-black">{activeDegree}</span>
+          {/* 2. CHẤT LIỆU GỌNG (FRAME MATERIAL) */}
+          <div className="space-y-2.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+              CHẤT LIỆU GỌNG: <span className="text-slate-900 font-black">{selectedMaterial.name.toUpperCase()}</span>
             </label>
-            <div className="flex flex-wrap gap-2">
-              {degreeOptions.map((deg) => (
-                <button
-                  key={deg}
-                  type="button"
-                  onClick={() => setSelectedDegree(deg)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeDegree === deg
-                      ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105'
-                      : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
-                  }`}
-                >
-                  {deg}
-                </button>
-              ))}
+            <div className="flex flex-wrap gap-2.5">
+              {materialOptions.map((mat) => {
+                const isSelected = selectedMaterial.name === mat.name;
+                return (
+                  <button
+                    key={mat.name}
+                    type="button"
+                    onClick={() => setSelectedMaterial(mat)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    <span>{mat.name}</span>
+                    {mat.price > 0 && (
+                      <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
+                        isSelected ? 'bg-emerald-500/30 text-emerald-200' : 'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        +{mat.price.toLocaleString('vi-VN')} đ
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </div>
 
-          {/* Quantity Counter */}
+          {/* 3. KIỂU DÁNG GỌNG (FRAME SHAPE) */}
+          <div className="space-y-2.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+              KIỂU DÁNG GỌNG: <span className="text-slate-900 font-black">{selectedShape.toUpperCase()}</span>
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              {shapeOptions.map((shape) => {
+                const isSelected = selectedShape === shape;
+                return (
+                  <button
+                    key={shape}
+                    type="button"
+                    onClick={() => setSelectedShape(shape)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    {shape}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 4. KÍCH THƯỚC GỌNG (FRAME SIZE / DIMENSIONS) */}
+          <div className="space-y-2.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+              KÍCH THƯỚC: <span className="text-slate-900 font-black">{selectedSize.toUpperCase()}</span>
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              {sizeOptions.map((size) => {
+                const isSelected = selectedSize === size;
+                return (
+                  <button
+                    key={size}
+                    type="button"
+                    onClick={() => setSelectedSize(size)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      isSelected
+                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    {size}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 5. TÍNH NĂNG BỔ SUNG TRÒNG (LENS & PROTECTION FEATURES) */}
+          <div className="space-y-2.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+              TÍNH NĂNG TRÒNG KÍNH: <span className="text-slate-900 font-black">{selectedFeature.name.toUpperCase()}</span>
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              {featureOptions.map((feat) => {
+                const isSelected = selectedFeature.name === feat.name;
+                return (
+                  <button
+                    key={feat.name}
+                    type="button"
+                    onClick={() => setSelectedFeature(feat)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    <span>{feat.name}</span>
+                    {feat.price > 0 && (
+                      <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
+                        isSelected ? 'bg-emerald-500/30 text-emerald-200' : 'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        +{feat.price.toLocaleString('vi-VN')} đ
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* 6. TÙY CHỌN ĐỘ CẬN (PRESCRIPTION DEGREE) */}
+          <div className="space-y-2.5">
+            <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+              TÙY CHỌN ĐỘ CẬN: <span className="text-slate-900 font-black">{selectedDegree.name.toUpperCase()}</span>
+            </label>
+            <div className="flex flex-wrap gap-2.5">
+              {degreeOptions.map((deg) => {
+                const isSelected = selectedDegree.name === deg.name;
+                return (
+                  <button
+                    key={deg.name}
+                    type="button"
+                    onClick={() => setSelectedDegree(deg)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                      isSelected
+                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
+                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
+                    }`}
+                  >
+                    <span>{deg.name}</span>
+                    {deg.price > 0 && (
+                      <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
+                        isSelected ? 'bg-emerald-500/30 text-emerald-200' : 'bg-emerald-50 text-emerald-600'
+                      }`}>
+                        +{deg.price.toLocaleString('vi-VN')} đ
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* TÓM TẮT CẤU HÌNH KÍNH ĐANG CHỌN */}
+          <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl text-xs text-slate-700 space-y-1.5 shadow-sm">
+            <div className="font-extrabold text-slate-900 flex items-center gap-1.5">
+              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+              <span>Cấu hình bạn đang chọn:</span>
+            </div>
+            <p className="text-[12px] text-slate-700 leading-relaxed font-medium">
+              <strong className="text-slate-900">{selectedColor}</strong> • {selectedMaterial.name} • {selectedShape} • Size {selectedSize} • {selectedFeature.name} • {selectedDegree.name}
+            </p>
+            {extraSurcharge > 0 && (
+              <div className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Phụ phí nâng cấp gọng & tròng cao cấp: +{extraSurcharge.toLocaleString('vi-VN')} VNĐ</span>
+              </div>
+            )}
+          </div>
+
+          {/* Số lượng mua */}
           <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 uppercase">Số lượng mua</label>
             <div className="flex items-center gap-3 w-fit bg-white border border-slate-200 rounded-xl p-1">
               <button
+                type="button"
                 onClick={() => setQuantity(Math.max(1, quantity - 1))}
                 className="w-8 h-8 rounded-lg bg-slate-100 text-slate-900 font-bold hover:bg-slate-200 flex items-center justify-center cursor-pointer"
               >
@@ -376,6 +614,7 @@ export default function ProductDetailPage({ params }) {
               </button>
               <span className="w-10 text-center font-extrabold text-sm text-slate-900">{quantity}</span>
               <button
+                type="button"
                 onClick={() => setQuantity(quantity + 1)}
                 className="w-8 h-8 rounded-lg bg-slate-100 text-slate-900 font-bold hover:bg-slate-200 flex items-center justify-center cursor-pointer"
               >
@@ -384,9 +623,10 @@ export default function ProductDetailPage({ params }) {
             </div>
           </div>
 
-          {/* Action buttons */}
+          {/* Nút hành động Mua hàng & Thêm giỏ */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <button
+              type="button"
               onClick={handleAddToCart}
               className="py-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-black text-sm border border-slate-900/50 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg"
             >
@@ -394,6 +634,7 @@ export default function ProductDetailPage({ params }) {
               <span>THÊM VÀO GIỎ HÀNG</span>
             </button>
             <button
+              type="button"
               onClick={handleBuyNow}
               className="py-4 rounded-2xl bg-black hover:bg-slate-800 text-white font-black text-sm flex items-center justify-center gap-2 transition-all cursor-pointer shadow-xl shadow-slate-500/25"
             >
@@ -402,152 +643,16 @@ export default function ProductDetailPage({ params }) {
             </button>
           </div>
 
-          {/* BẢNG ĐẶC TẢ KỸ THUẬT MẮT KÍNH TOÀN DIỆN (Eyewear Specifications, Dimensions & Features) */}
-          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
-              <h4 className="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
+          {/* Chi tiết mô tả & Giới thiệu mắt kính */}
+          {product.description && (
+            <div className="bg-white border border-slate-200 rounded-2xl p-5 space-y-2 text-xs leading-relaxed text-slate-600">
+              <h4 className="font-extrabold text-slate-900 text-xs uppercase flex items-center gap-1.5">
                 <Glasses className="w-4 h-4 text-slate-900" />
-                <span>Bảng Đặc Tả Kỹ Thuật Chi Tiết</span>
+                <span>Giới thiệu sản phẩm</span>
               </h4>
-              <span className="text-[11px] font-bold text-slate-500">Tiêu chuẩn quốc tế</span>
+              <p>{product.description}</p>
             </div>
-
-            {/* 3 Tabs thông số */}
-            <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl text-[11px] font-bold">
-              <button
-                type="button"
-                onClick={() => setActiveSpecTab('SPECS')}
-                className={`py-2 px-1 rounded-xl text-center transition-all cursor-pointer ${
-                  activeSpecTab === 'SPECS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                1. Đặc tả gọng & tròng
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSpecTab('DIMENSIONS')}
-                className={`py-2 px-1 rounded-xl text-center transition-all cursor-pointer ${
-                  activeSpecTab === 'DIMENSIONS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                2. Kích thước chuẩn
-              </button>
-              <button
-                type="button"
-                onClick={() => setActiveSpecTab('FEATURES')}
-                className={`py-2 px-1 rounded-xl text-center transition-all cursor-pointer ${
-                  activeSpecTab === 'FEATURES' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
-                }`}
-              >
-                3. Tính năng bảo vệ
-              </button>
-            </div>
-
-            {/* Nội dung Tab 1: Đặc tả kỹ thuật */}
-            {activeSpecTab === 'SPECS' && (
-              <div className="divide-y divide-slate-100 text-xs">
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Thương hiệu (Brand)</span>
-                  <span className="font-bold text-slate-900">{product.brand?.name || 'Ray-Ban'}</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Giới tính (Gender)</span>
-                  <span className="font-bold text-slate-900">
-                    {(product.name?.toLowerCase().includes('nam') && !product.name?.toLowerCase().includes('nữ')) ? 'Nam (Men)' : 
-                     (product.name?.toLowerCase().includes('nữ')) ? 'Nữ (Women)' : 'Unisex (Cả Nam & Nữ)'}
-                  </span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Kiểu dáng gọng (Frame Shape)</span>
-                  <span className="font-bold text-slate-900">
-                    {product.name?.toLowerCase().includes('aviator') ? 'Phi công (Aviator)' :
-                     product.name?.toLowerCase().includes('square') ? 'Vuông (Square)' :
-                     product.name?.toLowerCase().includes('round') ? 'Tròn (Round)' :
-                     product.name?.toLowerCase().includes('cat') ? 'Mắt mèo (Cat-eye)' : 'Chữ nhật (Rectangle)'}
-                  </span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Chất liệu gọng (Frame Material)</span>
-                  <span className="font-bold text-slate-900">Titanium Siêu Nhẹ & Nhựa Acetate</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Chất liệu tròng (Lens Material)</span>
-                  <span className="font-bold text-slate-900">Polycarbonate Chống Vỡ / Thủy tinh khoáng</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Màu sắc gọng (Frame Color)</span>
-                  <span className="font-bold text-slate-900">{activeColor}</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Màu sắc tròng (Lens Color)</span>
-                  <span className="font-bold text-slate-900">Xanh rêu Classic G-15 / Trong suốt</span>
-                </div>
-              </div>
-            )}
-
-            {/* Nội dung Tab 2: Kích thước */}
-            {activeSpecTab === 'DIMENSIONS' && (
-              <div className="divide-y divide-slate-100 text-xs">
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Chiều rộng tròng kính (Lens Width)</span>
-                  <span className="font-bold text-slate-900">54 mm (Cỡ tiêu chuẩn người lớn)</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Chiều rộng cầu kính (Bridge Width)</span>
-                  <span className="font-bold text-slate-900">18 mm (Vừa vặn sống mũi Á Đông)</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Chiều dài càng kính (Temple Length)</span>
-                  <span className="font-bold text-slate-900">140 mm (Ôm sát vành tai êm ái)</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Trọng lượng gọng (Weight)</span>
-                  <span className="font-bold text-emerald-600">18.5 g (Siêu nhẹ không hằn sống mũi)</span>
-                </div>
-                <div className="py-2.5 flex justify-between">
-                  <span className="text-slate-500">Độ cong cơ bản (Base Curve)</span>
-                  <span className="font-bold text-slate-900">Curve 6 (Tầm nhìn quang học sắc nét)</span>
-                </div>
-              </div>
-            )}
-
-            {/* Nội dung Tab 3: Tính năng bảo vệ */}
-            {activeSpecTab === 'FEATURES' && (
-              <div className="space-y-2 text-xs">
-                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200/60 flex items-start gap-2">
-                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold">Chống tia UV: Chuẩn UV400</span>
-                    <p className="text-[11px] text-emerald-700">Ngăn chặn 100% tia bức xạ mặt trời UVA & UVB gây hại giác mạc</p>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-sky-50 text-sky-900 border border-sky-200/60 flex items-start gap-2">
-                  <Check className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold">Lọc ánh sáng xanh (Blue Light Filter)</span>
-                    <p className="text-[11px] text-sky-700">Bảo vệ mắt tối ưu khi làm việc máy tính, điện thoại liên tục</p>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200/60 flex items-start gap-2">
-                  <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold">Chống chói / Phản quang (Anti-reflective)</span>
-                    <p className="text-[11px] text-amber-700">Lớp phủ váng AR loại bỏ hiện tượng lóa sáng đèn xe khi lái xe ban đêm</p>
-                  </div>
-                </div>
-
-                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-900 border border-purple-200/60 flex items-start gap-2">
-                  <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
-                  <div>
-                    <span className="font-bold">Chống trầy Nano & Đổi màu Photochromic</span>
-                    <p className="text-[11px] text-purple-700">Lớp phủ Hard-Coat hạn chế trầy xước, hỗ trợ tròng Transitions tự đổi màu ra nắng</p>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          )}
         </div>
       </div>
     </div>
