@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { 
   Sliders, Plus, Edit2, Trash2, ChevronRight, X, Save, 
-  Glasses, Check, Layers, Ruler, ShieldCheck, Tag, Loader2 
+  Glasses, Check, Layers, Ruler, ShieldCheck, Tag, Loader2, Sparkles, CheckCircle2 
 } from 'lucide-react';
 import { productService } from '@/services/productService';
 import { attributeService } from '@/services/attributeService';
@@ -26,10 +26,11 @@ export default function AttributesPage() {
   const [editValName, setEditValName] = useState('');
   const [editValPrice, setEditValPrice] = useState(0);
 
-  // Gán biến thể cho sản phẩm
+  // Gán biến thể cho sản phẩm (Hỗ trợ chọn 1 sản phẩm HOẶC TẤT CẢ SẢN PHẨM)
   const [productList, setProductList] = useState([]);
-  const [selectedProductId, setSelectedProductId] = useState('');
+  const [selectedProductId, setSelectedProductId] = useState('ALL'); // Mặc định chọn TẤT CẢ SẢN PHẨM
   const [productVariants, setProductVariants] = useState([]);
+  const [isAssigning, setIsAssigning] = useState(false);
   const [assignForm, setAssignForm] = useState({
     color: 'Đen Nhám (Matte Black)',
     degree: 'Không độ (0.00)',
@@ -58,14 +59,32 @@ export default function AttributesPage() {
     try {
       const res = await productService.getAllProductsAdmin();
       if (res.data && res.data.length > 0) {
-        setProductList(res.data);
-        if (!selectedProductId) {
-          setSelectedProductId(res.data[0].id);
-          setProductVariants(res.data[0].variants || []);
-        }
+        const prods = res.data;
+        setProductList(prods);
+
+        // Khởi tạo danh sách biến thể theo lựa chọn hiện tại
+        updateVariantsDisplay(selectedProductId, prods);
       }
     } catch (e) {
       console.error('Load products error:', e);
+    }
+  };
+
+  const updateVariantsDisplay = (prodId, prods = productList) => {
+    if (prodId === 'ALL') {
+      // Khi chọn ALL: Tổng hợp tất cả biến thể của mọi sản phẩm trong shop
+      const allVars = [];
+      prods.forEach(p => {
+        if (p.variants && p.variants.length > 0) {
+          p.variants.forEach(v => {
+            allVars.push({ ...v, productName: p.name, productId: p.id });
+          });
+        }
+      });
+      setProductVariants(allVars);
+    } else {
+      const found = prods.find((p) => p.id.toString() === prodId.toString());
+      setProductVariants(found?.variants || []);
     }
   };
 
@@ -76,10 +95,7 @@ export default function AttributesPage() {
 
   const handleSelectProduct = (prodId) => {
     setSelectedProductId(prodId);
-    const found = productList.find((p) => p.id.toString() === prodId.toString());
-    if (found) {
-      setProductVariants(found.variants || []);
-    }
+    updateVariantsDisplay(prodId);
   };
 
   const handleAddAttribute = async (e) => {
@@ -126,7 +142,6 @@ export default function AttributesPage() {
     if (!editValName.trim()) return;
 
     try {
-      // Xóa cũ và thêm mới vào CSDL
       await attributeService.deleteAttributeValue(editingValue.id);
       await attributeService.addAttributeValue(selectedAttrId, {
         value: editValName.trim(),
@@ -162,10 +177,11 @@ export default function AttributesPage() {
     }
   };
 
+  // Gán biến thể (Hỗ trợ 1 sản phẩm HOẶC TẤT CẢ SẢN PHẨM HÀNG LOẠT)
   const handleAssignVariantToProduct = async (e) => {
     e.preventDefault();
     if (!selectedProductId) {
-      alert('Vui lòng chọn 1 sản phẩm để gán!');
+      alert('Vui lòng chọn sản phẩm để gán!');
       return;
     }
 
@@ -176,6 +192,59 @@ export default function AttributesPage() {
       stockQuantity: Number(assignForm.stockQuantity),
     };
 
+    setIsAssigning(true);
+
+    // TRƯỜNG HỢP 1: Gán cho TẤT CẢ SẢN PHẨM trong shop
+    if (selectedProductId === 'ALL') {
+      const confirmed = confirm(
+        `XÁC NHẬN GÁN HÀNG LOẠT CHO TẤT CẢ SẢN PHẨM:\n\nBạn có chắc chắn muốn gán tùy chọn:\n- Màu sắc: ${assignForm.color}\n- Độ cận: ${assignForm.degree}\n- Giá bán: ${Number(assignForm.price).toLocaleString('vi-VN')} VNĐ\n- Tồn kho: ${assignForm.stockQuantity} chiếc\n\ncho TOÀN BỘ ${productList.length} SẢN PHẨM trong hệ thống không?`
+      );
+
+      if (!confirmed) {
+        setIsAssigning(false);
+        return;
+      }
+
+      try {
+        // Gọi API hàng loạt của backend
+        try {
+          const res = await fetchApi('/admin/products/apply-all-variants', {
+            method: 'POST',
+            body: JSON.stringify(newVar)
+          });
+          if (res && res.data) {
+            await loadProducts();
+            alert(`🎉 THÀNH CÔNG RỰC RỠ!\nĐã gán biến thể [${assignForm.color} - ${assignForm.degree}] cho TOÀN BỘ ${res.data} sản phẩm trong shop!`);
+            setIsAssigning(false);
+            return;
+          }
+        } catch (apiErr) {
+          console.warn('Backend bulk API error, fallback to loop:', apiErr);
+        }
+
+        // Fallback: chạy vòng lặp qua tất cả sản phẩm
+        let count = 0;
+        for (const prod of productList) {
+          try {
+            await fetchApi(`/admin/products/${prod.id}/variants`, {
+              method: 'POST',
+              body: JSON.stringify(newVar)
+            });
+            count++;
+          } catch (err) {}
+        }
+
+        await loadProducts();
+        alert(`🎉 Đã gán biến thể thành công cho ${count}/${productList.length} sản phẩm trong CSDL!`);
+      } catch (err) {
+        alert('Lỗi khi gán biến thể hàng loạt: ' + err.message);
+      } finally {
+        setIsAssigning(false);
+      }
+      return;
+    }
+
+    // TRƯỜNG HỢP 2: Gán cho 1 sản phẩm cụ thể
     try {
       const res = await fetchApi(`/admin/products/${selectedProductId}/variants`, {
         method: 'POST',
@@ -191,9 +260,11 @@ export default function AttributesPage() {
         targetProd.variants = updatedVars;
       }
 
-      alert(`Đã gán thành công Biến thể "${assignForm.color}" - "${assignForm.degree}" cho sản phẩm!`);
+      alert(`Đã gán thành công Biến thể "${assignForm.color}" - "${assignForm.degree}" cho sản phẩm #${selectedProductId}!`);
     } catch (error) {
       alert('Lỗi khi thêm biến thể: ' + error.message);
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -447,41 +518,78 @@ export default function AttributesPage() {
         </div>
       </div>
 
-      {/* KHỐI 2: Gán Màu sắc & Độ cận cho Sản phẩm Cụ thể */}
+      {/* KHỐI 2: Gán Biến Thể Cho Sản Phẩm Cụ Thể HOẶC TẤT CẢ SẢN PHẨM */}
       <div className="bg-white border border-slate-200 rounded-3xl p-6 space-y-6 shadow-2xl">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-200 pb-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4">
           <div>
             <h2 className="text-lg font-black text-slate-900 flex items-center gap-2">
               <Glasses className="w-5 h-5 text-slate-900" />
-              <span>Gán Biến Thể Màu Sắc & Độ Cận Cho Sản Phẩm Cụ Thể</span>
+              <span>Gán Biến Thể Màu Sắc & Độ Cận Cho Sản Phẩm (Hỗ Trợ Toàn Bộ Cửa Hàng)</span>
             </h2>
-            <p className="text-xs text-slate-500 mt-1">Chọn mẫu kính trong shop để thiết lập các tùy chọn Màu sắc, Độ cận, Tồn kho và Giá bán riêng</p>
+            <p className="text-xs text-slate-500 mt-1">
+              Bạn có thể chọn <strong>Từng sản phẩm riêng lẻ</strong> hoặc chọn <strong>🌟 TẤT CẢ SẢN PHẨM</strong> để áp dụng hàng loạt cùng lúc
+            </p>
           </div>
 
-          <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200">
-            <span className="text-xs font-bold text-slate-700 pl-2">Sản phẩm:</span>
+          {/* Ô Chọn Sản Phẩm (Đã bổ sung mục TẤT CẢ SẢN PHẨM) */}
+          <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-2xl border border-slate-200 shadow-sm">
+            <span className="text-xs font-bold text-slate-700 pl-2 shrink-0">Phạm vi áp dụng:</span>
             <select
               value={selectedProductId}
               onChange={(e) => handleSelectProduct(e.target.value)}
-              className="bg-white text-slate-900 font-bold text-xs p-2 rounded-xl border border-slate-200 focus:outline-none cursor-pointer max-w-xs"
+              className={`font-black text-xs p-2.5 rounded-xl border focus:outline-none cursor-pointer max-w-xs sm:max-w-md transition-all ${
+                selectedProductId === 'ALL'
+                  ? 'bg-slate-900 text-white border-slate-900 shadow-md ring-2 ring-slate-900/20'
+                  : 'bg-white text-slate-900 border-slate-300'
+              }`}
             >
-              {productList.map((p) => (
-                <option key={p.id} value={p.id}>
-                  #{p.id} - {p.name}
-                </option>
-              ))}
+              <option value="ALL" className="font-black text-indigo-700 bg-indigo-50 py-1">
+                🌟 TẤT CẢ SẢN PHẨM ({productList.length} sản phẩm - Áp dụng hàng loạt)
+              </option>
+              <optgroup label="--- Chọn từng sản phẩm riêng biệt ---">
+                {productList.map((p) => (
+                  <option key={p.id} value={p.id} className="text-slate-900 bg-white">
+                    #{p.id} - {p.name}
+                  </option>
+                ))}
+              </optgroup>
             </select>
           </div>
         </div>
 
-        {/* Form gán biến thể mới */}
+        {/* Banner thông báo khi ở chế độ "TẤT CẢ SẢN PHẨM" */}
+        {selectedProductId === 'ALL' && (
+          <div className="bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-lg">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-white/10 border border-white/20 flex items-center justify-center font-black text-xl shrink-0">
+                ✨
+              </div>
+              <div>
+                <h4 className="font-extrabold text-sm text-white flex items-center gap-2">
+                  <span>Chế độ: Gán Biến Thể Hàng Loạt Đến TOÀN BỘ Cửa Hàng</span>
+                  <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-bold">
+                    Hoạt động
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-300 mt-0.5">
+                  Khi bấm gán, biến thể Màu sắc, Độ cận, Giá bán và Tồn kho sẽ được cập nhật đồng loạt đến <strong>toàn bộ {productList.length} sản phẩm</strong> trong cơ sở dữ liệu.
+                </p>
+              </div>
+            </div>
+            <span className="text-xs font-black text-white bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/20 shrink-0 w-fit">
+              Phạm vi: {productList.length} sản phẩm
+            </span>
+          </div>
+        )}
+
+        {/* Form thiết lập biến thể */}
         <form onSubmit={handleAssignVariantToProduct} className="grid grid-cols-1 sm:grid-cols-5 gap-3 bg-slate-50 p-4 rounded-2xl border border-slate-200 text-xs">
           <div>
             <label className="block text-slate-700 font-bold mb-1">Màu sắc gọng kính</label>
             <select
               value={assignForm.color}
               onChange={(e) => setAssignForm({ ...assignForm, color: e.target.value })}
-              className="w-full bg-white text-slate-900 p-2.5 rounded-xl border border-slate-200 cursor-pointer"
+              className="w-full bg-white text-slate-900 p-2.5 rounded-xl border border-slate-200 cursor-pointer font-medium"
             >
               {colorList.map((c) => (
                 <option key={c.id} value={c.value}>{c.value}</option>
@@ -490,6 +598,8 @@ export default function AttributesPage() {
               <option value="Vàng Kim (Gold)">Vàng Kim (Gold)</option>
               <option value="Bạc Sang Trọng (Silver)">Bạc Sang Trọng (Silver)</option>
               <option value="Đồi Mồi (Tortoise)">Đồi Mồi (Tortoise)</option>
+              <option value="Xám Trong Suốt (Crystal Grey)">Xám Trong Suốt (Crystal Grey)</option>
+              <option value="Xanh Đen (Navy Blue)">Xanh Đen (Navy Blue)</option>
             </select>
           </div>
 
@@ -498,7 +608,7 @@ export default function AttributesPage() {
             <select
               value={assignForm.degree}
               onChange={(e) => setAssignForm({ ...assignForm, degree: e.target.value })}
-              className="w-full bg-white text-slate-900 p-2.5 rounded-xl border border-slate-200 cursor-pointer"
+              className="w-full bg-white text-slate-900 p-2.5 rounded-xl border border-slate-200 cursor-pointer font-medium"
             >
               <option value="Không độ (0.00)">Không độ (0.00)</option>
               <option value="Cận 1.00 độ">Cận 1.00 độ</option>
@@ -518,7 +628,7 @@ export default function AttributesPage() {
               required
               value={assignForm.price}
               onChange={(e) => setAssignForm({ ...assignForm, price: e.target.value })}
-              className="w-full bg-white text-slate-900 p-2.5 rounded-xl border border-slate-200"
+              className="w-full bg-white text-slate-900 p-2.5 rounded-xl border border-slate-200 font-bold"
             />
           </div>
 
@@ -529,26 +639,54 @@ export default function AttributesPage() {
               required
               value={assignForm.stockQuantity}
               onChange={(e) => setAssignForm({ ...assignForm, stockQuantity: e.target.value })}
-              className="w-full bg-white text-slate-900 p-2.5 rounded-xl border border-slate-200"
+              className="w-full bg-white text-slate-900 p-2.5 rounded-xl border border-slate-200 font-bold"
             />
           </div>
 
           <div className="flex items-end">
             <button
               type="submit"
-              className="w-full py-2.5 bg-black hover:bg-slate-800 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg cursor-pointer"
+              disabled={isAssigning}
+              className={`w-full py-2.5 text-white font-black text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg transition-all cursor-pointer disabled:opacity-50 ${
+                selectedProductId === 'ALL'
+                  ? 'bg-slate-900 hover:bg-black ring-2 ring-indigo-500/40'
+                  : 'bg-black hover:bg-slate-800'
+              }`}
             >
-              <Plus className="w-4 h-4" />
-              <span>+ Gán cho sản phẩm</span>
+              {isAssigning ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Đang xử lý hàng loạt...</span>
+                </>
+              ) : selectedProductId === 'ALL' ? (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>GÁN CHO TẤT CẢ ({productList.length} MẪU)</span>
+                </>
+              ) : (
+                <>
+                  <Plus className="w-4 h-4" />
+                  <span>+ Gán cho mẫu #{selectedProductId}</span>
+                </>
+              )}
             </button>
           </div>
         </form>
 
         {/* Danh sách biến thể hiện tại */}
         <div className="overflow-x-auto">
+          <div className="flex items-center justify-between pb-2 text-xs">
+            <span className="font-bold text-slate-700">
+              {selectedProductId === 'ALL'
+                ? `Danh sách biến thể tổng hợp trên TOÀN BỘ cửa hàng (${productVariants.length} bản ghi):`
+                : `Danh sách biến thể của sản phẩm #${selectedProductId} (${productVariants.length} bản ghi):`}
+            </span>
+          </div>
+
           <table className="w-full text-left text-xs">
             <thead className="bg-slate-100/60 text-slate-500 uppercase font-semibold border-b border-slate-200">
               <tr>
+                {selectedProductId === 'ALL' && <th className="p-3">SẢN PHẨM</th>}
                 <th className="p-3">MÀU SẮC</th>
                 <th className="p-3">ĐỘ CẬN</th>
                 <th className="p-3">ĐƠN GIÁ BÁN</th>
@@ -559,10 +697,20 @@ export default function AttributesPage() {
             <tbody className="divide-y divide-slate-100 text-slate-700">
               {productVariants.length === 0 ? (
                 <tr>
-                  <td colSpan="5" className="p-6 text-center text-slate-400">Sản phẩm này chưa có biến thể màu sắc / độ cận riêng</td>
+                  <td colSpan={selectedProductId === 'ALL' ? 6 : 5} className="p-8 text-center text-slate-400">
+                    Chưa có biến thể nào được gán. Hãy nhập thông tin ở form trên và bấm Gán!
+                  </td>
                 </tr>
-              ) : productVariants.map((v) => (
-                <tr key={v.id} className="hover:bg-slate-50 transition-colors">
+              ) : productVariants.slice(0, 50).map((v, idx) => (
+                <tr key={v.id || idx} className="hover:bg-slate-50 transition-colors">
+                  {selectedProductId === 'ALL' && (
+                    <td className="p-3 font-bold text-slate-900 max-w-xs truncate">
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono text-[11px] mr-1.5">
+                        #{v.productId}
+                      </span>
+                      {v.productName || 'Mắt kính'}
+                    </td>
+                  )}
                   <td className="p-3 font-bold text-slate-900 text-sm">{v.color || 'Mặc định'}</td>
                   <td className="p-3 font-medium text-slate-700">{v.degree || '0.00 (Không độ)'}</td>
                   <td className="p-3 font-black text-slate-900">{Number(v.price).toLocaleString('vi-VN')} VNĐ</td>
@@ -580,6 +728,11 @@ export default function AttributesPage() {
               ))}
             </tbody>
           </table>
+          {productVariants.length > 50 && (
+            <div className="p-3 text-center text-slate-400 text-xs border-t border-slate-100">
+              Đang hiển thị 50 / {productVariants.length} biến thể gần nhất trên toàn cửa hàng
+            </div>
+          )}
         </div>
       </div>
 

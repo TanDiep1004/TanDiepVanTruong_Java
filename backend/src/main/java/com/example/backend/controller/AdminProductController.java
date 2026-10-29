@@ -266,6 +266,29 @@ public class AdminProductController {
         return ResponseEntity.ok(ApiResponse.success(savedVariant, "Thêm biến thể mới thành công!"));
     }
 
+    @PostMapping("/apply-all-variants")
+    @Transactional
+    public ResponseEntity<ApiResponse<Integer>> applyVariantToAllProducts(@RequestBody VariantDto vDto) {
+        List<Product> products = productRepository.findAll();
+        int count = 0;
+        for (Product product : products) {
+            BigDecimal variantPrice = vDto.getPrice() != null && vDto.getPrice().compareTo(BigDecimal.ZERO) > 0 
+                    ? vDto.getPrice() : product.getPrice();
+            ProductVariant v = ProductVariant.builder()
+                    .product(product)
+                    .color(vDto.getColor() != null ? vDto.getColor() : "Đen Nhám (Matte Black)")
+                    .degree(vDto.getDegree() != null ? vDto.getDegree() : "Không độ (0.00)")
+                    .price(variantPrice)
+                    .stockQuantity(vDto.getStockQuantity() != null ? vDto.getStockQuantity() : 50)
+                    .status(1)
+                    .build();
+            productVariantRepository.save(v);
+            count++;
+        }
+        productVariantRepository.flush();
+        return ResponseEntity.ok(ApiResponse.success(count, "Đã gán biến thể thành công cho toàn bộ " + count + " sản phẩm!"));
+    }
+
     @DeleteMapping("/variants/{variantId}")
     @Transactional
     public ResponseEntity<ApiResponse<Void>> deleteProductVariant(@PathVariable Integer variantId) {
