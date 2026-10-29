@@ -204,14 +204,16 @@ export default function CheckoutPage() {
       }),
     };
 
-    // Save order into localStorage placed_orders array
-    try {
-      const existingOrders = JSON.parse(localStorage.getItem('placed_orders') || '[]');
-      existingOrders.unshift(newOrderObj);
-      localStorage.setItem('placed_orders', JSON.stringify(existingOrders));
-    } catch (err) {}
+    const finishCheckout = (finalOrderId) => {
+      const finalOrder = { ...newOrderObj, id: finalOrderId };
+      // Save order into localStorage placed_orders array with the actual ID
+      try {
+        const existingOrders = JSON.parse(localStorage.getItem('placed_orders') || '[]');
+        const filtered = existingOrders.filter(o => o.id !== finalOrderId && o.id !== generatedId);
+        filtered.unshift(finalOrder);
+        localStorage.setItem('placed_orders', JSON.stringify(filtered));
+      } catch (err) {}
 
-    const finishCheckout = async () => {
       if (typeof window !== 'undefined') {
         localStorage.removeItem('checkout_selected_items');
       }
@@ -223,23 +225,21 @@ export default function CheckoutPage() {
       setLoading(false);
 
       if (paymentMethod === 'VNPAY') {
-        window.location.href = `/vnpay-mock?orderId=${newOrderObj.id}&amount=${Math.round(checkoutTotal)}`;
+        window.location.href = `/vnpay-mock?orderId=${finalOrderId}&amount=${Math.round(checkoutTotal)}`;
         return;
       }
 
-      window.location.href = `/order-success/${newOrderObj.id}`;
+      window.location.href = `/order-success/${finalOrderId}`;
     };
 
     try {
       const res = await orderService.checkout(newOrderObj);
       const resData = res?.data || res;
-      if (resData && (resData.orderId || resData.id)) {
-        newOrderObj.id = resData.orderId || resData.id;
-      }
-      finishCheckout();
+      const realId = resData?.orderId || resData?.id || generatedId;
+      finishCheckout(realId);
     } catch (err) {
       console.log("Order placement note:", err.message || err);
-      finishCheckout();
+      finishCheckout(generatedId);
     }
   };
 
