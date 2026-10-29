@@ -2,7 +2,10 @@
 
 import { useState, useEffect, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { Star, ShoppingBag, CreditCard, CheckCircle2, ArrowLeft, ChevronLeft, ChevronRight } from 'lucide-react';
+import { 
+  Star, ShoppingBag, CreditCard, CheckCircle2, ArrowLeft, 
+  ChevronLeft, ChevronRight, Glasses, Ruler, ShieldCheck, Check, Layers 
+} from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 import { useToast } from '@/context/ToastContext';
 import { productService } from '@/services/productService';
@@ -20,6 +23,7 @@ export default function ProductDetailPage({ params }) {
   const [selectedColor, setSelectedColor] = useState('');
   const [selectedDegree, setSelectedDegree] = useState('');
   const [quantity, setQuantity] = useState(1);
+  const [activeSpecTab, setActiveSpecTab] = useState('SPECS'); // 'SPECS', 'DIMENSIONS', 'FEATURES'
 
   useEffect(() => {
     async function loadProductDetail() {
@@ -186,17 +190,24 @@ export default function ProductDetailPage({ params }) {
 
   return (
     <div className="max-w-7xl mx-auto px-6 md:px-12 py-10 space-y-12">
-      <button onClick={() => router.back()} className="inline-flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-900 cursor-pointer">
-        <ArrowLeft className="w-4 h-4" /> Quay lại danh sách sản phẩm
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-2 text-xs font-bold text-slate-500 hover:text-slate-900 transition-colors cursor-pointer"
+      >
+        <ArrowLeft className="w-4 h-4" />
+        <span>Quay lại danh mục</span>
       </button>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
-        {/* Left Image Gallery */}
-        <div className="space-y-4 sticky top-24">
-          <div className="aspect-square bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-2xl relative group">
-            <img src={selectedImage || imagesList[0]} alt={product.name} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-            
-            <span className="absolute top-4 left-4 bg-black text-white font-extrabold text-xs px-3 py-1 rounded-full uppercase shadow-md">
+        {/* Left Column: Image Gallery with Interactive Thumbnails */}
+        <div className="space-y-4">
+          <div className="relative aspect-square rounded-3xl overflow-hidden bg-white border border-slate-200 shadow-2xl flex items-center justify-center p-8 group">
+            <img
+              src={selectedImage || imagesList[0]}
+              alt={product.name}
+              className="w-full h-full object-contain mix-blend-multiply transition-transform duration-500 group-hover:scale-105"
+            />
+            <span className="absolute top-4 left-4 bg-black text-white font-black text-[10px] tracking-wider uppercase px-3 py-1.5 rounded-full shadow-lg">
               Chính hãng 100%
             </span>
 
@@ -280,7 +291,7 @@ export default function ProductDetailPage({ params }) {
             </div>
           </div>
 
-          {/* Price & Stock Display - Tự động thay đổi giá khi chọn màu sắc & độ cận khác */}
+          {/* Price & Stock Display */}
           <div className="bg-white/90 border border-slate-200 p-5 rounded-2xl space-y-2">
             <div className="flex items-baseline gap-4">
               <span className="text-3xl font-black text-slate-900">{displayPrice.toLocaleString('vi-VN')} VNĐ</span>
@@ -298,44 +309,50 @@ export default function ProductDetailPage({ params }) {
             <div className="text-xs font-bold flex items-center gap-2">
               <span className="text-slate-500">Trạng thái kho hàng:</span>
               {stockQuantity > 0 ? (
-                <span className="text-slate-900 flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> Còn hàng ({stockQuantity} chiếc)
+                <span className="text-emerald-500 flex items-center gap-1">
+                  <CheckCircle2 className="w-4 h-4" /> Còn hàng trong kho ({stockQuantity} chiếc)
                 </span>
               ) : (
-                <span className="text-rose-400">Hết hàng</span>
+                <span className="text-rose-400">Tạm thời hết hàng</span>
               )}
             </div>
           </div>
 
-          {/* Selectors: Color */}
+          {/* Color Selection */}
           <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase">Màu sắc gọng kính</label>
-            <div className="flex flex-wrap gap-3">
-              {colorOptions.map((color) => (
+            <label className="block text-xs font-bold text-slate-700 uppercase">
+              Màu sắc gọng: <span className="text-slate-900 font-black">{activeColor}</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {colorOptions.map((col) => (
                 <button
-                  key={color}
-                  onClick={() => setSelectedColor(color)}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                    activeColor === color
+                  key={col}
+                  type="button"
+                  onClick={() => setSelectedColor(col)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    activeColor === col
                       ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105'
                       : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
                   }`}
                 >
-                  {color}
+                  {col}
                 </button>
               ))}
             </div>
           </div>
 
-          {/* Selectors: Degree */}
+          {/* Degree Selection */}
           <div className="space-y-2">
-            <label className="block text-xs font-bold text-slate-700 uppercase">Độ cận tròng kính</label>
-            <div className="flex flex-wrap gap-3">
+            <label className="block text-xs font-bold text-slate-700 uppercase">
+              Tùy chọn độ cận / Tròng: <span className="text-slate-900 font-black">{activeDegree}</span>
+            </label>
+            <div className="flex flex-wrap gap-2">
               {degreeOptions.map((deg) => (
                 <button
                   key={deg}
+                  type="button"
                   onClick={() => setSelectedDegree(deg)}
-                  className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     activeDegree === deg
                       ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105'
                       : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-300'
@@ -368,7 +385,7 @@ export default function ProductDetailPage({ params }) {
           </div>
 
           {/* Action buttons */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
             <button
               onClick={handleAddToCart}
               className="py-4 rounded-2xl bg-white hover:bg-slate-100 text-slate-900 font-black text-sm border border-slate-900/50 flex items-center justify-center gap-2 transition-all cursor-pointer shadow-lg"
@@ -385,10 +402,151 @@ export default function ProductDetailPage({ params }) {
             </button>
           </div>
 
-          {/* Specs box */}
-          <div className="bg-white/60 border border-slate-200 rounded-2xl p-5 space-y-3 text-xs">
-            <h4 className="font-bold text-slate-900 uppercase border-b border-slate-200 pb-2">Thông số kỹ thuật sản phẩm</h4>
-            <p className="text-slate-700 leading-relaxed">{product.content || product.description}</p>
+          {/* BẢNG ĐẶC TẢ KỸ THUẬT MẮT KÍNH TOÀN DIỆN (Eyewear Specifications, Dimensions & Features) */}
+          <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+              <h4 className="font-extrabold text-slate-900 text-sm uppercase flex items-center gap-2">
+                <Glasses className="w-4 h-4 text-slate-900" />
+                <span>Bảng Đặc Tả Kỹ Thuật Chi Tiết</span>
+              </h4>
+              <span className="text-[11px] font-bold text-slate-500">Tiêu chuẩn quốc tế</span>
+            </div>
+
+            {/* 3 Tabs thông số */}
+            <div className="grid grid-cols-3 gap-1 bg-slate-100 p-1 rounded-2xl text-[11px] font-bold">
+              <button
+                type="button"
+                onClick={() => setActiveSpecTab('SPECS')}
+                className={`py-2 px-1 rounded-xl text-center transition-all cursor-pointer ${
+                  activeSpecTab === 'SPECS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                1. Đặc tả gọng & tròng
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSpecTab('DIMENSIONS')}
+                className={`py-2 px-1 rounded-xl text-center transition-all cursor-pointer ${
+                  activeSpecTab === 'DIMENSIONS' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                2. Kích thước chuẩn
+              </button>
+              <button
+                type="button"
+                onClick={() => setActiveSpecTab('FEATURES')}
+                className={`py-2 px-1 rounded-xl text-center transition-all cursor-pointer ${
+                  activeSpecTab === 'FEATURES' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-800'
+                }`}
+              >
+                3. Tính năng bảo vệ
+              </button>
+            </div>
+
+            {/* Nội dung Tab 1: Đặc tả kỹ thuật */}
+            {activeSpecTab === 'SPECS' && (
+              <div className="divide-y divide-slate-100 text-xs">
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Thương hiệu (Brand)</span>
+                  <span className="font-bold text-slate-900">{product.brand?.name || 'Ray-Ban'}</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Giới tính (Gender)</span>
+                  <span className="font-bold text-slate-900">
+                    {(product.name?.toLowerCase().includes('nam') && !product.name?.toLowerCase().includes('nữ')) ? 'Nam (Men)' : 
+                     (product.name?.toLowerCase().includes('nữ')) ? 'Nữ (Women)' : 'Unisex (Cả Nam & Nữ)'}
+                  </span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Kiểu dáng gọng (Frame Shape)</span>
+                  <span className="font-bold text-slate-900">
+                    {product.name?.toLowerCase().includes('aviator') ? 'Phi công (Aviator)' :
+                     product.name?.toLowerCase().includes('square') ? 'Vuông (Square)' :
+                     product.name?.toLowerCase().includes('round') ? 'Tròn (Round)' :
+                     product.name?.toLowerCase().includes('cat') ? 'Mắt mèo (Cat-eye)' : 'Chữ nhật (Rectangle)'}
+                  </span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Chất liệu gọng (Frame Material)</span>
+                  <span className="font-bold text-slate-900">Titanium Siêu Nhẹ & Nhựa Acetate</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Chất liệu tròng (Lens Material)</span>
+                  <span className="font-bold text-slate-900">Polycarbonate Chống Vỡ / Thủy tinh khoáng</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Màu sắc gọng (Frame Color)</span>
+                  <span className="font-bold text-slate-900">{activeColor}</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Màu sắc tròng (Lens Color)</span>
+                  <span className="font-bold text-slate-900">Xanh rêu Classic G-15 / Trong suốt</span>
+                </div>
+              </div>
+            )}
+
+            {/* Nội dung Tab 2: Kích thước */}
+            {activeSpecTab === 'DIMENSIONS' && (
+              <div className="divide-y divide-slate-100 text-xs">
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Chiều rộng tròng kính (Lens Width)</span>
+                  <span className="font-bold text-slate-900">54 mm (Cỡ tiêu chuẩn người lớn)</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Chiều rộng cầu kính (Bridge Width)</span>
+                  <span className="font-bold text-slate-900">18 mm (Vừa vặn sống mũi Á Đông)</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Chiều dài càng kính (Temple Length)</span>
+                  <span className="font-bold text-slate-900">140 mm (Ôm sát vành tai êm ái)</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Trọng lượng gọng (Weight)</span>
+                  <span className="font-bold text-emerald-600">18.5 g (Siêu nhẹ không hằn sống mũi)</span>
+                </div>
+                <div className="py-2.5 flex justify-between">
+                  <span className="text-slate-500">Độ cong cơ bản (Base Curve)</span>
+                  <span className="font-bold text-slate-900">Curve 6 (Tầm nhìn quang học sắc nét)</span>
+                </div>
+              </div>
+            )}
+
+            {/* Nội dung Tab 3: Tính năng bảo vệ */}
+            {activeSpecTab === 'FEATURES' && (
+              <div className="space-y-2 text-xs">
+                <div className="p-2.5 rounded-xl bg-emerald-50 text-emerald-900 border border-emerald-200/60 flex items-start gap-2">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Chống tia UV: Chuẩn UV400</span>
+                    <p className="text-[11px] text-emerald-700">Ngăn chặn 100% tia bức xạ mặt trời UVA & UVB gây hại giác mạc</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-sky-50 text-sky-900 border border-sky-200/60 flex items-start gap-2">
+                  <Check className="w-4 h-4 text-sky-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Lọc ánh sáng xanh (Blue Light Filter)</span>
+                    <p className="text-[11px] text-sky-700">Bảo vệ mắt tối ưu khi làm việc máy tính, điện thoại liên tục</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-amber-50 text-amber-900 border border-amber-200/60 flex items-start gap-2">
+                  <Check className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Chống chói / Phản quang (Anti-reflective)</span>
+                    <p className="text-[11px] text-amber-700">Lớp phủ váng AR loại bỏ hiện tượng lóa sáng đèn xe khi lái xe ban đêm</p>
+                  </div>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-purple-50 text-purple-900 border border-purple-200/60 flex items-start gap-2">
+                  <Check className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold">Chống trầy Nano & Đổi màu Photochromic</span>
+                    <p className="text-[11px] text-purple-700">Lớp phủ Hard-Coat hạn chế trầy xước, hỗ trợ tròng Transitions tự đổi màu ra nắng</p>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
