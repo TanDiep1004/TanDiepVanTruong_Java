@@ -113,11 +113,16 @@ public class OrderServiceImpl implements OrderService {
             finalAmount = BigDecimal.ZERO;
         }
 
-        // Fetch UserAddress
+        // Fetch UserAddress (safe fallback without throwing exception)
         UserAddress address = null;
         if (request.getAddressId() != null) {
-            address = userAddressRepository.findById(request.getAddressId())
-                    .orElseThrow(() -> new RuntimeException("Không tìm thấy địa chỉ giao hàng hợp lệ!"));
+            address = userAddressRepository.findById(request.getAddressId()).orElse(null);
+            if (address == null && user != null) {
+                List<UserAddress> userAddrs = userAddressRepository.findByUserId(user.getId());
+                if (userAddrs != null && !userAddrs.isEmpty()) {
+                    address = userAddrs.get(0);
+                }
+            }
         } else {
             throw new RuntimeException("Vui lòng chọn địa chỉ giao hàng!");
         }
