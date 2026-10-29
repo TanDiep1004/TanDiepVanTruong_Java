@@ -1,37 +1,25 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const bannerService = {
-  // Public API
-  getAllBannersPublic: async () => {
-    return await fetchApi('/public/banners', {
-      method: 'GET',
-    });
+  getAllBannersPublic: () => {
+    return axiosCustom.get('/public/banners');
   },
 
-  // Admin APIs
-  getAllBannersAdmin: async () => {
-    return await fetchApi('/admin/banners', {
-      method: 'GET',
-    });
+  getAllBannersAdmin: () => {
+    return axiosCustom.get('/admin/banners');
   },
 
-  createBanner: async (bannerData) => {
-    return await fetchApi('/admin/banners', {
-      method: 'POST',
-      body: JSON.stringify(bannerData),
-    });
+  createBanner: (bannerData) => {
+    return axiosCustom.post('/admin/banners', bannerData);
   },
 
-  updateBanner: async (id, bannerData) => {
-    return await fetchApi(`/admin/banners/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(bannerData),
-    });
+  updateBanner: (id, bannerData) => {
+    return axiosCustom.put(`/admin/banners/${id}`, bannerData);
   },
 
-  deleteBanner: async (id) => {
-    return await fetchApi(`/admin/banners/${id}`, {
-      method: 'DELETE',
-    });
+  deleteBanner: (id) => {
+    return axiosCustom.delete(`/admin/banners/${id}`);
   },
 };
+
+export default bannerService;

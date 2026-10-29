@@ -1,16 +1,21 @@
 package com.example.backend.controller;
 
+import com.example.backend.security.CustomUserDetails;
 import com.example.backend.dto.ApiResponse;
 import com.example.backend.entity.Brand;
 import com.example.backend.entity.Product;
 import com.example.backend.entity.ProductImage;
 import com.example.backend.entity.ProductVariant;
+import com.example.backend.entity.User;
 import com.example.backend.repository.BrandRepository;
 import com.example.backend.repository.ProductImageRepository;
 import com.example.backend.repository.ProductRepository;
 import com.example.backend.repository.ProductVariantRepository;
+import com.example.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -25,7 +30,17 @@ public class AdminBrandController {
     private final ProductRepository productRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductImageRepository productImageRepository;
+    private final UserRepository userRepository;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    private User getAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            return userRepository.findById(userDetails.getUser().getId()).orElse(null);
+        }
+        return null;
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Brand>>> getAllBrands() {
@@ -41,6 +56,13 @@ public class AdminBrandController {
         if (brand.getStatus() == null) {
             brand.setStatus(1);
         }
+
+        User user = getAuthenticatedUser();
+        if (user != null) {
+            brand.setCreatedBy(user);
+            brand.setUpdatedBy(user);
+        }
+
         Brand saved = brandRepository.save(brand);
         return ResponseEntity.ok(ApiResponse.success(saved, "Thêm Thương hiệu mới thành công!"));
     }
@@ -61,6 +83,11 @@ public class AdminBrandController {
         }
         if (req.getStatus() != null) {
             brand.setStatus(req.getStatus());
+        }
+
+        User user = getAuthenticatedUser();
+        if (user != null) {
+            brand.setUpdatedBy(user);
         }
 
         Brand updated = brandRepository.save(brand);

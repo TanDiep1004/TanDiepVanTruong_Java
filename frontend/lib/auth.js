@@ -20,6 +20,7 @@ export const removeToken = () => {
   localStorage.removeItem(tKey);
   localStorage.removeItem(uKey);
   document.cookie = `${tKey}=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT`;
+  window.dispatchEvent(new Event('auth_state_change'));
 };
 
 export const getUser = () => {
@@ -31,6 +32,7 @@ export const getUser = () => {
 export const setUser = (user) => {
   if (typeof window === 'undefined') return;
   localStorage.setItem(getUserKey(), JSON.stringify(user));
+  window.dispatchEvent(new Event('auth_state_change'));
 };
 
 export const isAdmin = () => {

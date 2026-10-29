@@ -1,35 +1,25 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const brandService = {
-  getAllBrands: async () => {
-    return await fetchApi('/public/brands', {
-      method: 'GET',
-    });
+  getAllBrands: () => {
+    return axiosCustom.get('/public/brands');
   },
 
-  getAllBrandsAdmin: async () => {
-    return await fetchApi('/admin/brands', {
-      method: 'GET',
-    });
+  getAllBrandsAdmin: () => {
+    return axiosCustom.get('/admin/brands');
   },
 
-  createBrand: async (brandData) => {
-    return await fetchApi('/admin/brands', {
-      method: 'POST',
-      body: JSON.stringify(brandData),
-    });
+  createBrand: (brandData) => {
+    return axiosCustom.post('/admin/brands', brandData);
   },
 
-  updateBrand: async (id, brandData) => {
-    return await fetchApi(`/admin/brands/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(brandData),
-    });
+  updateBrand: (id, brandData) => {
+    return axiosCustom.put(`/admin/brands/${id}`, brandData);
   },
 
-  deleteBrand: async (id) => {
-    return await fetchApi(`/admin/brands/${id}`, {
-      method: 'DELETE',
-    });
+  deleteBrand: (id) => {
+    return axiosCustom.delete(`/admin/brands/${id}`);
   },
 };
+
+export default brandService;

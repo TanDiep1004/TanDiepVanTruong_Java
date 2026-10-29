@@ -1,14 +1,19 @@
 package com.example.backend.controller;
 
+import com.example.backend.security.CustomUserDetails;
 import com.example.backend.dto.ApiResponse;
 import com.example.backend.entity.Promotion;
 import com.example.backend.entity.PromotionProduct;
 import com.example.backend.entity.PromotionProductId;
+import com.example.backend.entity.User;
 import com.example.backend.repository.PromotionProductRepository;
 import com.example.backend.repository.PromotionRepository;
+import com.example.backend.repository.UserRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -24,6 +29,16 @@ public class AdminPromotionController {
     private final PromotionRepository promotionRepository;
     private final PromotionProductRepository promotionProductRepository;
     private final com.example.backend.repository.ProductRepository productRepository;
+    private final UserRepository userRepository;
+
+    private User getAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            return userRepository.findById(userDetails.getUser().getId()).orElse(null);
+        }
+        return null;
+    }
 
     @Data
     public static class PromotionDto {
@@ -57,6 +72,12 @@ public class AdminPromotionController {
                 .endDatetime(LocalDateTime.now().plusYears(1))
                 .build();
 
+        User user = getAuthenticatedUser();
+        if (user != null) {
+            promotion.setCreatedBy(user);
+            promotion.setUpdatedBy(user);
+        }
+
         Promotion saved = promotionRepository.save(promotion);
 
         if ("specific".equalsIgnoreCase(saved.getApplyTo()) && dto.getProductIds() != null) {
@@ -87,6 +108,11 @@ public class AdminPromotionController {
         }
         if (dto.getStatus() != null) {
             promotion.setStatus(dto.getStatus());
+        }
+
+        User user = getAuthenticatedUser();
+        if (user != null) {
+            promotion.setUpdatedBy(user);
         }
 
         Promotion updated = promotionRepository.save(promotion);

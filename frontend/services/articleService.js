@@ -1,43 +1,29 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const articleService = {
-  // Public APIs for Storefront
-  getAllArticlesPublic: async () => {
-    return await fetchApi('/public/articles', {
-      method: 'GET',
-    });
+  getAllArticlesPublic: () => {
+    return axiosCustom.get('/public/articles');
   },
 
-  getArticleByIdPublic: async (id) => {
-    return await fetchApi(`/public/articles/${id}`, {
-      method: 'GET',
-    });
+  getArticleByIdPublic: (id) => {
+    return axiosCustom.get(`/public/articles/${id}`);
   },
 
-  // Admin APIs
-  getAllArticlesAdmin: async () => {
-    return await fetchApi('/admin/articles', {
-      method: 'GET',
-    });
+  getAllArticlesAdmin: () => {
+    return axiosCustom.get('/admin/articles');
   },
 
-  createArticle: async (articleData) => {
-    return await fetchApi('/admin/articles', {
-      method: 'POST',
-      body: JSON.stringify(articleData),
-    });
+  createArticle: (articleData) => {
+    return axiosCustom.post('/admin/articles', articleData);
   },
 
-  updateArticle: async (id, articleData) => {
-    return await fetchApi(`/admin/articles/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(articleData),
-    });
+  updateArticle: (id, articleData) => {
+    return axiosCustom.put(`/admin/articles/${id}`, articleData);
   },
 
-  deleteArticle: async (id) => {
-    return await fetchApi(`/admin/articles/${id}`, {
-      method: 'DELETE',
-    });
+  deleteArticle: (id) => {
+    return axiosCustom.delete(`/admin/articles/${id}`);
   },
 };
+
+export default articleService;

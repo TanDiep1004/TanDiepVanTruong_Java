@@ -12,10 +12,12 @@ import com.example.backend.entity.Category;
 import com.example.backend.entity.Product;
 import com.example.backend.entity.ProductImage;
 import com.example.backend.entity.ProductVariant;
+import com.example.backend.entity.User;
 import com.example.backend.repository.CategoryRepository;
 import com.example.backend.repository.ProductImageRepository;
 import com.example.backend.repository.ProductRepository;
 import com.example.backend.repository.ProductVariantRepository;
+import com.example.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.transaction.annotation.Transactional;
@@ -33,6 +35,9 @@ public class AdminCategoryController {
     private CategoryRepository categoryRepository;
     
     @Autowired
+    private UserRepository userRepository;
+    
+    @Autowired
     private JwtTokenProvider tokenProvider;
     
     @Autowired
@@ -42,6 +47,15 @@ public class AdminCategoryController {
     private final ProductVariantRepository productVariantRepository;
     private final ProductImageRepository productImageRepository;
     private final org.springframework.jdbc.core.JdbcTemplate jdbcTemplate;
+
+    private User getAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            return userRepository.findById(userDetails.getUser().getId()).orElse(null);
+        }
+        return null;
+    }
 
     @GetMapping
     public ResponseEntity<ApiResponse<List<Category>>> getAllCategories() {
@@ -57,6 +71,12 @@ public class AdminCategoryController {
         }
         if (category.getStatus() == null) {
             category.setStatus(1);
+        }
+
+        User user = getAuthenticatedUser();
+        if (user != null) {
+            category.setCreatedBy(user);
+            category.setUpdatedBy(user);
         }
 
         Category saved = categoryRepository.save(category);
@@ -82,6 +102,11 @@ public class AdminCategoryController {
             category.setStatus(req.getStatus());
         }
 
+        User user = getAuthenticatedUser();
+        if (user != null) {
+            category.setUpdatedBy(user);
+        }
+
         Category updated = categoryRepository.save(category);
         return ResponseEntity.ok(ApiResponse.success(updated, "Cập nhật Danh mục thành công!"));
     }
@@ -94,7 +119,6 @@ public class AdminCategoryController {
         }
 
         try {
-            // Kiểm tra trước xem danh mục này có chứa sản phẩm nào đã phát sinh đơn hàng không
             Integer orderCount = jdbcTemplate.queryForObject(
                 "SELECT COUNT(*) FROM order_details od JOIN product_variants pv ON od.variant_id = pv.id JOIN products p ON pv.product_id = p.id WHERE p.category_id = ?",
                 Integer.class, id
@@ -104,7 +128,6 @@ public class AdminCategoryController {
                 return ResponseEntity.badRequest().body(ApiResponse.error(400, "Không thể xóa Danh mục này vì có Sản phẩm bên trong đã phát sinh Đơn hàng. Vui lòng chuyển trạng thái sang 'Ẩn' để bảo toàn dữ liệu."));
             }
 
-            // Tự động giải phóng các sản phẩm thuộc danh mục này trước khi xóa
             List<Product> products = productRepository.findByCategoryId(id);
             for (Product p : products) {
                 List<ProductVariant> variants = productVariantRepository.findByProductId(p.getId());
@@ -129,3 +152,4 @@ public class AdminCategoryController {
         }
     }
 }
+

@@ -1,49 +1,33 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const productService = {
-  // Public APIs
-  getAllProducts: async () => {
-    return await fetchApi('/public/products', {
-      method: 'GET',
-    });
+  getAllProducts: () => {
+    return axiosCustom.get('/public/products');
   },
 
-  getAllProductsPublic: async () => {
-    return await fetchApi('/public/products', {
-      method: 'GET',
-    });
+  getAllProductsPublic: () => {
+    return axiosCustom.get('/public/products');
   },
 
-  getProductById: async (id) => {
-    return await fetchApi(`/public/products/${id}`, {
-      method: 'GET',
-    });
+  getProductById: (id) => {
+    return axiosCustom.get(`/public/products/${id}`);
   },
 
-  // Admin APIs
-  getAllProductsAdmin: async () => {
-    return await fetchApi('/admin/products', {
-      method: 'GET',
-    });
+  getAllProductsAdmin: () => {
+    return axiosCustom.get('/admin/products');
   },
 
-  createProduct: async (productData) => {
-    return await fetchApi('/admin/products', {
-      method: 'POST',
-      body: JSON.stringify(productData),
-    });
+  createProduct: (productData) => {
+    return axiosCustom.post('/admin/products', productData);
   },
 
-  updateProduct: async (id, productData) => {
-    return await fetchApi(`/admin/products/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(productData),
-    });
+  updateProduct: (id, productData) => {
+    return axiosCustom.put(`/admin/products/${id}`, productData);
   },
 
-  deleteProduct: async (id) => {
-    return await fetchApi(`/admin/products/${id}`, {
-      method: 'DELETE',
-    });
+  deleteProduct: (id) => {
+    return axiosCustom.delete(`/admin/products/${id}`);
   },
 };
+
+export default productService;

@@ -1,20 +1,25 @@
 package com.example.backend.controller;
 
+import com.example.backend.security.CustomUserDetails;
 import com.example.backend.dto.ApiResponse;
 import com.example.backend.entity.Brand;
 import com.example.backend.entity.Category;
 import com.example.backend.entity.Product;
 import com.example.backend.entity.ProductImage;
 import com.example.backend.entity.ProductVariant;
+import com.example.backend.entity.User;
 import com.example.backend.repository.BrandRepository;
 import com.example.backend.repository.CategoryRepository;
 import com.example.backend.repository.ProductImageRepository;
 import com.example.backend.repository.ProductRepository;
 import com.example.backend.repository.ProductVariantRepository;
+import com.example.backend.repository.UserRepository;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
@@ -31,7 +36,17 @@ public class AdminProductController {
     private final BrandRepository brandRepository;
     private final ProductVariantRepository productVariantRepository;
     private final ProductImageRepository productImageRepository;
+    private final UserRepository userRepository;
     private final JdbcTemplate jdbcTemplate;
+
+    private User getAuthenticatedUser() {
+        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof CustomUserDetails) {
+            CustomUserDetails userDetails = (CustomUserDetails) auth.getPrincipal();
+            return userRepository.findById(userDetails.getUser().getId()).orElse(null);
+        }
+        return null;
+    }
 
     @Data
     public static class ImageDto {
@@ -88,6 +103,12 @@ public class AdminProductController {
         }
         if (dto.getBrandId() != null) {
             brandRepository.findById(dto.getBrandId()).ifPresent(product::setBrand);
+        }
+
+        User user = getAuthenticatedUser();
+        if (user != null) {
+            product.setCreatedBy(user);
+            product.setUpdatedBy(user);
         }
 
         Product savedProduct = productRepository.save(product);
@@ -167,6 +188,11 @@ public class AdminProductController {
             if (brand != null) existingProduct.setBrand(brand);
         }
 
+        User user = getAuthenticatedUser();
+        if (user != null) {
+            existingProduct.setUpdatedBy(user);
+        }
+
         Product updatedProduct = productRepository.save(existingProduct);
         return ResponseEntity.ok(ApiResponse.success(updatedProduct, "Cập nhật thông tin sản phẩm thành công!"));
     }
@@ -192,7 +218,7 @@ public class AdminProductController {
             // 1. Xóa các bảng liên kết Foreign Key trước khi xóa sản phẩm
             try {
                 jdbcTemplate.update("DELETE FROM promotion_products WHERE product_id = ?", id);
-                jdbcTemplate.update("DELETE FROM cart_items WHERE product_id = ?", id);
+                jdbcTemplate.update("DELETE FROM carts WHERE variant_id IN (SELECT id FROM product_variants WHERE product_id = ?)", id);
                 jdbcTemplate.update("DELETE FROM reviews WHERE product_id = ?", id);
             } catch (Exception e) {
                 System.err.println("Lỗi khi xóa bảng phụ thuộc: " + e.getMessage());
@@ -258,3 +284,4 @@ public class AdminProductController {
         }
     }
 }
+

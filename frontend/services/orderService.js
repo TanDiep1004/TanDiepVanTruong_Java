@@ -1,40 +1,29 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const orderService = {
-  checkout: async (orderData) => {
-    return await fetchApi('/user/orders', {
-      method: 'POST',
-      body: JSON.stringify(orderData),
-    });
+  checkout: (orderData) => {
+    return axiosCustom.post('/user/orders', orderData);
   },
 
-  getMyOrders: async () => {
-    return await fetchApi('/user/orders', {
-      method: 'GET',
-    });
+  getMyOrders: () => {
+    return axiosCustom.get('/user/orders');
   },
 
-  getOrderById: async (id) => {
-    return await fetchApi(`/user/orders/${id}`, {
-      method: 'GET',
-    });
+  getOrderById: (id) => {
+    return axiosCustom.get(`/user/orders/${id}`);
   },
 
-  cancelOrder: async (id) => {
-    return await fetchApi(`/user/orders/${id}/cancel`, {
-      method: 'PUT',
-    });
+  cancelOrder: (id) => {
+    return axiosCustom.put(`/user/orders/${id}/cancel`);
   },
 
-  getAllOrdersAdmin: async () => {
-    return await fetchApi('/admin/orders', {
-      method: 'GET',
-    });
+  getAllOrdersAdmin: () => {
+    return axiosCustom.get('/admin/orders');
   },
 
-  updateOrderStatus: async (id, status) => {
-    return await fetchApi(`/admin/orders/${id}/status?status=${encodeURIComponent(status)}`, {
-      method: 'PUT',
-    });
+  updateOrderStatus: (id, status) => {
+    return axiosCustom.put(`/admin/orders/${id}/status?status=${encodeURIComponent(status)}`);
   },
 };
+
+export default orderService;

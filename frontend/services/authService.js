@@ -1,23 +1,17 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const authService = {
-  login: async (credentials) => {
-    return await fetchApi('/public/auth/login', {
-      method: 'POST',
-      body: JSON.stringify(credentials),
-    });
+  login: (credentials) => {
+    return axiosCustom.post('/public/auth/login', credentials);
   },
 
-  register: async (userData) => {
-    return await fetchApi('/public/auth/register', {
-      method: 'POST',
-      body: JSON.stringify(userData),
-    });
+  register: (userData) => {
+    return axiosCustom.post('/public/auth/register', userData);
   },
 
-  getProfile: async () => {
-    return await fetchApi('/user/profile', {
-      method: 'GET',
-    });
+  getProfile: () => {
+    return axiosCustom.get('/user/profile');
   },
 };
+
+export default authService;

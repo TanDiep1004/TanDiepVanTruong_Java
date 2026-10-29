@@ -1,35 +1,25 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const categoryService = {
-  getAllCategories: async () => {
-    return await fetchApi('/public/categories', {
-      method: 'GET',
-    });
+  getAllCategories: () => {
+    return axiosCustom.get('/public/categories');
   },
 
-  getAllCategoriesAdmin: async () => {
-    return await fetchApi('/admin/categories', {
-      method: 'GET',
-    });
+  getAllCategoriesAdmin: () => {
+    return axiosCustom.get('/admin/categories');
   },
 
-  createCategory: async (categoryData) => {
-    return await fetchApi('/admin/categories', {
-      method: 'POST',
-      body: JSON.stringify(categoryData),
-    });
+  createCategory: (categoryData) => {
+    return axiosCustom.post('/admin/categories', categoryData);
   },
 
-  updateCategory: async (id, categoryData) => {
-    return await fetchApi(`/admin/categories/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(categoryData),
-    });
+  updateCategory: (id, categoryData) => {
+    return axiosCustom.put(`/admin/categories/${id}`, categoryData);
   },
 
-  deleteCategory: async (id) => {
-    return await fetchApi(`/admin/categories/${id}`, {
-      method: 'DELETE',
-    });
+  deleteCategory: (id) => {
+    return axiosCustom.delete(`/admin/categories/${id}`);
   },
 };
+
+export default categoryService;

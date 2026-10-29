@@ -1,36 +1,25 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const promotionService = {
-  applyPromotion: async (promotionRequest) => {
-    return await fetchApi('/public/promotions/apply', {
-      method: 'POST',
-      body: JSON.stringify(promotionRequest),
-    });
+  applyPromotion: (promotionRequest) => {
+    return axiosCustom.post('/public/promotions/apply', promotionRequest);
   },
 
-  getAllPromotionsAdmin: async () => {
-    return await fetchApi('/admin/promotions', {
-      method: 'GET',
-    });
+  getAllPromotionsAdmin: () => {
+    return axiosCustom.get('/admin/promotions');
   },
 
-  createPromotion: async (promotionData) => {
-    return await fetchApi('/admin/promotions', {
-      method: 'POST',
-      body: JSON.stringify(promotionData),
-    });
+  createPromotion: (promotionData) => {
+    return axiosCustom.post('/admin/promotions', promotionData);
   },
 
-  updatePromotion: async (id, promotionData) => {
-    return await fetchApi(`/admin/promotions/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(promotionData),
-    });
+  updatePromotion: (id, promotionData) => {
+    return axiosCustom.put(`/admin/promotions/${id}`, promotionData);
   },
 
-  deletePromotion: async (id) => {
-    return await fetchApi(`/admin/promotions/${id}`, {
-      method: 'DELETE',
-    });
+  deletePromotion: (id) => {
+    return axiosCustom.delete(`/admin/promotions/${id}`);
   },
 };
+
+export default promotionService;

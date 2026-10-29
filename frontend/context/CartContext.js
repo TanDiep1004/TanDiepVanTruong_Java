@@ -1,100 +1,180 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { fetchApi } from '@/lib/api';
-import { getToken } from '@/lib/auth';
+import { getToken, getUser } from '@/lib/auth';
 
 const CartContext = createContext();
 
+const getCartStorageKey = () => {
+  if (typeof window === 'undefined') return 'ntd_cart_guest';
+  const user = getUser();
+  if (user) {
+    const rawId = user.email || user.id || user.userId || user.username || 'user';
+    const identifier = rawId.toString().toLowerCase().trim();
+    if (identifier) return `ntd_cart_user_${identifier}`;
+  }
+  return 'ntd_cart_guest';
+};
+
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
+  const [activeKey, setActiveKey] = useState('ntd_cart_guest');
+  const [isLoaded, setIsLoaded] = useState(false);
   const [promotion, setPromotion] = useState(null);
   const [discountAmount, setDiscountAmount] = useState(0);
 
-  useEffect(() => {
-    const token = getToken();
-    if (token) {
-      const saved = localStorage.getItem('ntd_cart');
-      if (saved) {
-        try {
-          setCartItems(JSON.parse(saved));
-        } catch (e) {}
+  // 1. Tải dữ liệu giỏ hàng tương ứng với người dùng hiện tại
+  const loadCartForCurrentUser = useCallback(() => {
+    if (typeof window === 'undefined') return;
+
+    const currentKey = getCartStorageKey();
+    setActiveKey(currentKey);
+
+    let saved = localStorage.getItem(currentKey);
+
+    // Fallback migration
+    if (!saved && currentKey !== 'ntd_cart_guest') {
+      const legacyCart = localStorage.getItem('ntd_cart');
+      if (legacyCart) {
+        saved = legacyCart;
+        localStorage.setItem(currentKey, legacyCart);
+      }
+    }
+
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        setCartItems(Array.isArray(parsed) ? parsed : []);
+      } catch (e) {
+        setCartItems([]);
       }
     } else {
       setCartItems([]);
-      localStorage.removeItem('ntd_cart');
     }
+    setIsLoaded(true);
   }, []);
 
+  // 2. Đăng ký sự kiện lắng nghe Đăng nhập / Đăng xuất realtime
   useEffect(() => {
-    const token = getToken();
-    if (token) {
-      localStorage.setItem('ntd_cart', JSON.stringify(cartItems));
-    } else if (cartItems.length > 0) {
-      setCartItems([]);
-      localStorage.removeItem('ntd_cart');
+    loadCartForCurrentUser();
+
+    const handleAuthChange = () => {
+      loadCartForCurrentUser();
+    };
+
+    window.addEventListener('auth_state_change', handleAuthChange);
+    window.addEventListener('storage', handleAuthChange);
+
+    return () => {
+      window.removeEventListener('auth_state_change', handleAuthChange);
+      window.removeEventListener('storage', handleAuthChange);
+    };
+  }, [loadCartForCurrentUser]);
+
+  // 3. Tự động đồng bộ giỏ hàng vào localStorage khi cartItems thay đổi
+  useEffect(() => {
+    if (typeof window === 'undefined' || !isLoaded) return;
+    const currentKey = getCartStorageKey();
+    if (currentKey === activeKey) {
+      localStorage.setItem(currentKey, JSON.stringify(cartItems));
     }
-  }, [cartItems]);
+  }, [cartItems, activeKey, isLoaded]);
 
   const addToCart = (product, variant, quantity = 1) => {
     const token = getToken();
     if (!token) {
-      alert('VUI LÒNG ĐĂNG NHẬP!\nBạn cần đăng nhập tài khoản khách hàng trước khi thêm sản phẩm vào giỏ hàng hoặc mua sắm.');
       if (typeof window !== 'undefined') {
         window.location.href = '/login';
       }
       return false;
     }
 
+    const currentKey = getCartStorageKey();
+
     setCartItems((prev) => {
       const existingIndex = prev.findIndex(
         (item) => item.product.id === product.id && item.variant?.id === variant?.id
       );
 
+      let updated;
       if (existingIndex > -1) {
-        const updated = [...prev];
+        updated = [...prev];
         updated[existingIndex].quantity += quantity;
-        return updated;
       } else {
-        return [...prev, { product, variant, quantity }];
+        updated = [...prev, { product, variant, quantity }];
       }
+
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(currentKey, JSON.stringify(updated));
+      }
+      return updated;
     });
 
     return true;
   };
 
   const removeFromCart = (index) => {
-    setCartItems((prev) => prev.filter((_, i) => i !== index));
+    const currentKey = getCartStorageKey();
+    setCartItems((prev) => {
+      const updated = prev.filter((_, i) => i !== index);
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(currentKey, JSON.stringify(updated));
+      }
+      return updated;
+    });
+  };
+
+  const removeSelectedFromCart = (itemsToRemove) => {
+    if (!Array.isArray(itemsToRemove) || itemsToRemove.length === 0) return;
+    const currentKey = getCartStorageKey();
+    setCartItems((prev) => {
+      const updated = prev.filter((item) => {
+        return !itemsToRemove.some(
+          (rem) => rem.product.id === item.product.id && rem.variant?.id === item.variant?.id
+        );
+      });
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(currentKey, JSON.stringify(updated));
+      }
+      return updated;
+    });
   };
 
   const updateQuantity = (index, delta) => {
+    const currentKey = getCartStorageKey();
     setCartItems((prev) => {
       const updated = [...prev];
       const newQty = updated[index].quantity + delta;
       if (newQty <= 0) return prev;
       updated[index].quantity = newQty;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem(currentKey, JSON.stringify(updated));
+      }
       return updated;
     });
   };
 
   const clearCart = () => {
+    const currentKey = getCartStorageKey();
     setCartItems([]);
     setPromotion(null);
     setDiscountAmount(0);
-    localStorage.removeItem('ntd_cart');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem(currentKey);
+      localStorage.removeItem('ntd_cart');
+    }
   };
 
-  const token = typeof window !== 'undefined' ? getToken() : null;
-  const activeCartItems = token ? cartItems : [];
-
-  const cartSubtotal = activeCartItems.reduce((acc, item) => {
+  const cartSubtotal = cartItems.reduce((acc, item) => {
     const price = item.variant?.price || item.product.price || 1500000;
     return acc + price * item.quantity;
   }, 0);
 
-  const applyCouponCode = async (code) => {
-    const subtotal = cartSubtotal;
-    const productIds = activeCartItems.map((item) => item.product.id);
+  const applyCouponCode = async (code, customSubtotal = null, customItems = null) => {
+    const subtotal = customSubtotal !== null ? customSubtotal : cartSubtotal;
+    const targetItems = customItems || cartItems;
+    const productIds = targetItems.map((item) => item.product.id);
 
     try {
       const res = await fetchApi('/public/promotions/apply', {
@@ -118,13 +198,13 @@ export function CartProvider({ children }) {
     }
   };
 
-  const cartCount = activeCartItems.reduce((acc, item) => acc + item.quantity, 0);
+  const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cartTotal = Math.max(0, cartSubtotal - discountAmount);
 
   return (
     <CartContext.Provider
       value={{
-        cartItems: activeCartItems,
+        cartItems,
         cartCount,
         cartSubtotal,
         discountAmount,
@@ -132,6 +212,7 @@ export function CartProvider({ children }) {
         promotion,
         addToCart,
         removeFromCart,
+        removeSelectedFromCart,
         updateQuantity,
         clearCart,
         applyCouponCode,

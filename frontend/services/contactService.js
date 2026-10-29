@@ -1,21 +1,17 @@
-import { fetchApi } from '@/lib/api';
+import axiosCustom from '../axiosCustom.js';
 
 export const contactService = {
-  getAllContactsAdmin: async () => {
-    return await fetchApi('/admin/contacts', {
-      method: 'GET',
-    });
+  getAllContactsAdmin: () => {
+    return axiosCustom.get('/admin/contacts');
   },
 
-  updateStatus: async (id, status) => {
-    return await fetchApi(`/admin/contacts/${id}/status?status=${encodeURIComponent(status)}`, {
-      method: 'PUT',
-    });
+  updateStatus: (id, status) => {
+    return axiosCustom.put(`/admin/contacts/${id}/status?status=${encodeURIComponent(status)}`);
   },
 
-  deleteContact: async (id) => {
-    return await fetchApi(`/admin/contacts/${id}`, {
-      method: 'DELETE',
-    });
+  deleteContact: (id) => {
+    return axiosCustom.delete(`/admin/contacts/${id}`);
   },
 };
+
+export default contactService;
