@@ -2,16 +2,16 @@
 
 ---
 
-## 📑 BÁO CÁO ĐỒ ÁN MÔN HỌC LẬP TRÌNH JAVA (BẢN MỀM CHÍNH THỨC)
+## 📑 BÁO CÁO ĐỒ ÁN MÔN HỌC LẬP TRÌNH JAVA (NHÓM 18)
 
-> **Đề tài:** Xây dựng hệ thống thương mại điện tử bán mắt kính trực tuyến NTD Eyewear với Java Spring Boot 3, Spring Data JPA, MySQL và Next.js 14  
+> **Tên tệp báo cáo nộp giảng viên:** `Nhom18_WebBanMatKinh_Java.docx`  
+> **Đề tài:** Xây dựng hệ thống thương mại điện tử bán mắt kính trực tuyến (WebBanMatKinh_Java) với Java Spring Boot 3, Spring Data JPA, MySQL và Next.js 14  
+> **Nhóm thực hiện:** **Nhóm 18**  
 > **Sinh viên thực hiện:** **Nguyễn Tấn Điệp** - MSSV: **2123110145**  
 > **Kho lưu trữ GitHub (Public):** [https://github.com/TanDiep1004/TanDiepVanTruong_Java](https://github.com/TanDiep1004/TanDiepVanTruong_Java)
 
-### 📥 Tải về file mềm báo cáo (Soft Copy):
-* 📕 **[Xem / Tải Báo Cáo File PDF (Khuyên dùng)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom01_NTDEyewear_LapTrinhJava.pdf)** *(Định dạng PDF đã căn chỉnh chuẩn khổ A4, Times New Roman 13pt)*
-* 📘 **[Tải Báo Cáo File Word (.DOCX)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom01_NTDEyewear_LapTrinhJava.docx)** *(Chuẩn Microsoft Word)*
-* 📄 **[Tải Báo Cáo File Word (.DOC)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom01_NTDEyewear_LapTrinhJava.doc)**
+### 📥 Tải về file mềm báo cáo Word (Nhóm 18):
+* 📘 **[Tải Báo Cáo File Word (.DOCX): Nhom18_WebBanMatKinh_Java.docx](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom18_WebBanMatKinh_Java.docx)** *(Tệp Word chuẩn theo yêu cầu giảng viên)*
 * 📖 **[Đọc trực tiếp Báo Cáo Online (Markdown)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/blob/main/BAO_CAO_DO_AN_MON_LAP_TRINH_JAVA.md)**
 
 ---

@@ -9,14 +9,16 @@
 <br/><br/>
 
 # BÁO CÁO ĐỒ ÁN MÔN HỌC: LẬP TRÌNH JAVA
-## **ĐỀ TÀI: XÂY DỰNG HỆ THỐNG THƯƠNG MẠI ĐIỆN TỬ BÁN MẮT KÍNH TRỰC TUYẾN NTD EYEWEAR VỚI JAVA SPRING BOOT, SPRING DATA JPA VÀ NEXT.JS**
+## **ĐỀ TÀI: XÂY DỰNG WEBSITE BÁN MẮT KÍNH TRỰC TUYẾN (WebBanMatKinh_Java) VỚI JAVA SPRING BOOT VÀ NEXT.JS**
 
 <br/><br/>
 
-* **Học phần:** Lập trình Java (Java Web Application Development)
+* **Nhóm thực hiện:** **Nhóm 18**
+* **Tên tệp đồ án:** `Nhom18_WebBanMatKinh_Java.docx`
+* **Học phần:** Lập trình Java
 * **Giảng viên hướng dẫn:** [Điền tên Giảng viên hướng dẫn]
 * **Sinh viên thực hiện:**
-  1. **Nguyễn Tấn Điệp** – MSSV: **2123110145** (Trưởng nhóm - Backend & Full-stack)
+  1. **Nguyễn Tấn Điệp** – MSSV: **2123110145** (Trưởng nhóm)
   2. **[Thành viên 2 / Văn Trường]** – MSSV: **[Điền MSSV nếu có]**
 * **Kho mã nguồn GitHub:** [https://github.com/TanDiep1004/TanDiepVanTruong_Java.git](https://github.com/TanDiep1004/TanDiepVanTruong_Java.git)
 * **Thời gian thực hiện:** Năm học 2025 - 2026
@@ -710,9 +712,9 @@ public static String hmacSHA512(final String key, final String data) {
 6. **VNPAY Developer Portal.** *Tài liệu tích hợp thanh toán Cổng VNPAY v2.1.0*. Truy cập tại: `https://sandbox.vnpayment.vn/apis/docs/`
 7. **Next.js Documentation.** *App Router and Server Components*. Truy cập tại: `https://nextjs.org/docs`
 
-### 7.3. Bảng phân công nhiệm vụ nhóm
+### 7.3. Bảng phân công nhiệm vụ Nhóm 18
 
-#### **Bảng 4.6: Bảng phân công nhiệm vụ và mức độ hoàn thành**
+#### **Bảng 4.6: Bảng phân công nhiệm vụ Nhóm 18 và mức độ hoàn thành**
 | Thành viên thực hiện | Nhiệm vụ chính được giao | Sản phẩm bàn giao / Minh chứng | Mức độ hoàn thành |
 | :--- | :--- | :--- | :---: |
 | **Nguyễn Tấn Điệp**<br/>MSSV: **2123110145**<br/>*(Trưởng nhóm)* | - Khảo sát bài toán, thiết kế kiến trúc hệ thống và cơ sở dữ liệu ERD.<br/>- Xây dựng toàn bộ Backend Spring Boot: Entities, Repositories, Services, Controllers.<br/>- Cài đặt bảo mật Spring Security 6, JWT Filter và mã hóa BCrypt.<br/>- Tích hợp cổng thanh toán trực tuyến VNPAY Sandbox.<br/>- Xây dựng giao diện Next.js, giỏ hàng, trang thanh toán và Admin Dashboard. | - Bộ mã nguồn Backend & Frontend hoàn chỉnh trên GitHub.<br/>- Cơ sở dữ liệu `matkinh_db` 17 bảng.<br/>- Nhật ký commit và sản phẩm chạy thực tế. | **100% (Hoàn thành xuất sắc)** |

@@ -316,7 +316,7 @@ const doc = new Document({
   ],
 });
 
-const outputPathDocx = path.join(__dirname, '..', 'Nhom01_NTDEyewear_LapTrinhJava.docx');
+const outputPathDocx = path.join(__dirname, '..', 'Nhom18_WebBanMatKinh_Java.docx');
 
 Packer.toBuffer(doc).then((buffer) => {
   fs.writeFileSync(outputPathDocx, buffer);
