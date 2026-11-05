@@ -1,0 +1,20 @@
+{
+  "name": "nguyentandiep_2123110145",
+  "version": "1.0.0",
+  "description": "Chào mừng đến với **NTD Eyewear** - Hệ thống cửa hàng mắt kính cao cấp được xây dựng với kiến trúc hiện đại, bao gồm giao diện người dùng (Frontend) mượt mà và hệ thống quản trị (Backend) mạnh mẽ.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TanDiep1004/TanDiepVanTruong_Java.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/TanDiep1004/TanDiepVanTruong_Java/issues"
+  },
+  "homepage": "https://github.com/TanDiep1004/TanDiepVanTruong_Java#readme"
+}
