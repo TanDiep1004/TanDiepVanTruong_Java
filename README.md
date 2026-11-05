@@ -1,5 +1,21 @@
 # 👓 NTD Eyewear - Cửa Hàng Mắt Kính Trực Tuyến
 
+---
+
+## 📑 BÁO CÁO ĐỒ ÁN MÔN HỌC LẬP TRÌNH JAVA (BẢN MỀM CHÍNH THỨC)
+
+> **Đề tài:** Xây dựng hệ thống thương mại điện tử bán mắt kính trực tuyến NTD Eyewear với Java Spring Boot 3, Spring Data JPA, MySQL và Next.js 14  
+> **Sinh viên thực hiện:** **Nguyễn Tấn Điệp** - MSSV: **2123110145**  
+> **Kho lưu trữ GitHub (Public):** [https://github.com/TanDiep1004/TanDiepVanTruong_Java](https://github.com/TanDiep1004/TanDiepVanTruong_Java)
+
+### 📥 Tải về file mềm báo cáo (Soft Copy):
+* 📕 **[Xem / Tải Báo Cáo File PDF (Khuyên dùng)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom01_NTDEyewear_LapTrinhJava.pdf)** *(Định dạng PDF đã căn chỉnh chuẩn khổ A4, Times New Roman 13pt)*
+* 📘 **[Tải Báo Cáo File Word (.DOCX)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom01_NTDEyewear_LapTrinhJava.docx)** *(Chuẩn Microsoft Word)*
+* 📄 **[Tải Báo Cáo File Word (.DOC)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom01_NTDEyewear_LapTrinhJava.doc)**
+* 📖 **[Đọc trực tiếp Báo Cáo Online (Markdown)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/blob/main/BAO_CAO_DO_AN_MON_LAP_TRINH_JAVA.md)**
+
+---
+
 Chào mừng đến với **NTD Eyewear** - Hệ thống cửa hàng mắt kính cao cấp được xây dựng với kiến trúc hiện đại, bao gồm giao diện người dùng (Frontend) mượt mà và hệ thống quản trị (Backend) mạnh mẽ.
 
 ![NTD Eyewear Banner](https://images.unsplash.com/photo-1511499767150-a48a237f0083?auto=format&fit=crop&q=80&w=1200&h=400)
