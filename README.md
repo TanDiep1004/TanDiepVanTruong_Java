@@ -11,8 +11,7 @@
 > **Kho lưu trữ GitHub (Public):** [https://github.com/TanDiep1004/TanDiepVanTruong_Java](https://github.com/TanDiep1004/TanDiepVanTruong_Java)
 
 ### 📥 Tải về file mềm báo cáo Word (Nhóm 18):
-* 📘 **[Tải Báo Cáo File Word (.DOCX): Nhom18_WebBanMatKinh_Java.docx](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom18_WebBanMatKinh_Java.docx)** *(Tệp Word chuẩn theo yêu cầu giảng viên)*
-* 📖 **[Đọc trực tiếp Báo Cáo Online (Markdown)](https://github.com/TanDiep1004/TanDiepVanTruong_Java/blob/main/BAO_CAO_DO_AN_MON_LAP_TRINH_JAVA.md)**
+* 📘 **[Tải Báo Cáo File Word (.DOCX): Nhom18_WebBanMatKinh_Java.docx](https://github.com/TanDiep1004/TanDiepVanTruong_Java/raw/main/Nhom18_WebBanMatKinh_Java.docx)** *(Tệp Word chuẩn theo yêu cầu của giảng viên)*
 
 ---
 
