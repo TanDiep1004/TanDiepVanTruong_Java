@@ -24,21 +24,44 @@ export default function ProductDetailPage({ params }) {
   const [quantity, setQuantity] = useState(1);
 
   // Các nhóm tùy chọn tương tác trực quan (Interactive Customer Selectors)
-  const [selectedColor, setSelectedColor] = useState('Đen Nhám Tròng Prizm Black');
   const [selectedFeature, setSelectedFeature] = useState({ name: 'Tròng Tiêu Chuẩn CR-39 UV400', price: 0 });
   const [selectedDegree, setSelectedDegree] = useState({ name: '0.00 (Không độ / Thời trang)', price: 0 });
 
-  // Tự động nhận diện thông số cố định theo mẫu kính (1 loại Chất liệu, Kiểu dáng, Kích thước)
+  // Tự động nhận diện thông số cố định theo mẫu kính (1 loại Màu sắc, Chất liệu, Kiểu dáng, Kích thước)
   const detectProductSpecs = (prod) => {
-    if (!prod) return { material: 'Nhựa Acetate Cao Cấp', shape: 'Phi Công (Aviator)', size: '54-18-140 mm (Tiêu chuẩn)' };
+    if (!prod) return { color: 'Đen Nhám Classic', material: 'Nhựa Acetate Cao Cấp', shape: 'Phi Công (Aviator)', size: '54-18-140 mm (Tiêu chuẩn)' };
     const text = `${prod.name || ''} ${prod.description || ''} ${prod.content || ''}`.toLowerCase();
     
+    // 1. Màu sắc cố định đi theo từng mẫu kính
+    let color = 'Đen Nhám (Matte Black)';
+    if (prod.variants && prod.variants.length > 0 && prod.variants[0].color) {
+      color = prod.variants[0].color;
+    } else if (text.includes('prizm sapphire') || text.includes('navy') || text.includes('xanh navy')) {
+      color = 'Xanh Navy Tròng Prizm Sapphire';
+    } else if (text.includes('prizm black') || text.includes('black iridium')) {
+      color = 'Đen Nhám Tròng Prizm Black';
+    } else if (text.includes('gold') || text.includes('vàng kim') || text.includes('viền kim loại gold')) {
+      color = 'Đen Viền Kim Loại Gold';
+    } else if (text.includes('havana') || text.includes('đồi mồi') || text.includes('tortoise') || text.includes('brown')) {
+      color = 'Đồi Mồi Havana Sọc Web';
+    } else if (text.includes('matte black') || text.includes('đen nhám')) {
+      color = 'Đen Nhám (Matte Black)';
+    } else if (text.includes('silver') || text.includes('bạc')) {
+      color = 'Bạc Sang Trọng (Silver)';
+    } else if (text.includes('crystal') || text.includes('trong suốt') || text.includes('xám')) {
+      color = 'Xám Trong Suốt (Crystal Grey)';
+    } else if (text.includes('pink') || text.includes('hồng')) {
+      color = 'Hồng Pastel (Acetate Pink)';
+    }
+
+    // 2. Chất liệu cố định đi theo mẫu kính
     let material = 'Nhựa Acetate Cao Cấp';
     if (text.includes('titanium')) material = 'Titanium Siêu Nhẹ (Chống gỉ sét)';
     else if (text.includes('tr90') || text.includes('nhựa dẻo')) material = 'Nhựa dẻo TR90 Siêu bền';
     else if (text.includes('nhôm') || text.includes('magie') || text.includes('thể thao')) material = 'Hợp kim Nhôm - Magie Thể Thao';
     else if (text.includes('kim loại') || text.includes('metal') || text.includes('gold') || text.includes('silver') || text.includes('viền kim loại')) material = 'Kim loại cao cấp mạ Crom/Gold';
 
+    // 3. Kiểu dáng cố định
     let shape = 'Phi Công (Aviator)';
     if (text.includes('square') || text.includes('vuông')) shape = 'Vuông (Square)';
     else if (text.includes('round') || text.includes('tròn')) shape = 'Tròn (Round)';
@@ -50,21 +73,10 @@ export default function ProductDetailPage({ params }) {
     if (text.includes('aviator') || text.includes('58')) size = '58-14-145 mm (Cỡ lớn Aviator)';
     else if (text.includes('50') || text.includes('nhỏ')) size = '50-16-135 mm (Cỡ nhỏ)';
 
-    return { material, shape, size };
+    return { color, material, shape, size };
   };
 
   const fixedSpecs = detectProductSpecs(product);
-
-  // Danh mục tùy chọn có sẵn
-  const defaultColors = [
-    'Đen Nhám Tròng Prizm Black',
-    'Xanh Navy Tròng Prizm Sapphire',
-    'Đen Nhám (Matte Black)',
-    'Vàng Kim (Gold)',
-    'Đồi Mồi (Tortoise Havana)',
-    'Bạc Sang Trọng (Silver)',
-    'Xám Trong Suốt (Crystal Grey)'
-  ];
 
   const featureOptions = [
     { name: 'Tròng Tiêu Chuẩn CR-39 UV400', price: 0 },
@@ -108,10 +120,6 @@ export default function ProductDetailPage({ params }) {
             setSelectedImage(fullObj.imageUrl);
           }
 
-          if (variantsList.length > 0 && variantsList[0].color) {
-            setSelectedColor(variantsList[0].color);
-          }
-
           setLoading(false);
           return;
         }
@@ -127,9 +135,6 @@ export default function ProductDetailPage({ params }) {
           setProduct(found);
           if (found.images && found.images.length > 0) {
             setSelectedImage(found.images[0].imageUrl);
-          }
-          if (found.variants && found.variants.length > 0 && found.variants[0].color) {
-            setSelectedColor(found.variants[0].color);
           }
           setLoading(false);
           return;
@@ -173,10 +178,6 @@ export default function ProductDetailPage({ params }) {
     );
   }
 
-  // Hợp nhất danh sách màu sắc từ database và danh mục chuẩn
-  const variantColors = product.variants ? product.variants.map(v => v.color).filter(Boolean) : [];
-  const colorOptions = Array.from(new Set([...variantColors, ...defaultColors]));
-
   // Tính toán đơn giá realtime: Giá gốc sản phẩm + Phụ phí tính năng tròng kính (Độ cận & Chất liệu không tăng giá)
   const basePrice = product.price ? Number(product.price) : 1500000;
   const extraSurcharge = (selectedFeature?.price || 0);
@@ -193,15 +194,15 @@ export default function ProductDetailPage({ params }) {
   // Gom đầy đủ các tùy chọn người dùng đã chọn
   const buildSelectedVariant = () => {
     return {
-      id: `${product.id}-${selectedColor}-${fixedSpecs.material}-${fixedSpecs.size}-${selectedDegree.name}`.replace(/\s+/g, '-'),
-      color: selectedColor,
+      id: `${product.id}-${fixedSpecs.color}-${fixedSpecs.material}-${fixedSpecs.size}-${selectedDegree.name}`.replace(/\s+/g, '-'),
+      color: fixedSpecs.color,
       material: fixedSpecs.material,
       shape: fixedSpecs.shape,
       size: fixedSpecs.size,
       feature: selectedFeature.name,
       degree: selectedDegree.name,
       price: displayPrice,
-      variantName: `${selectedColor} • ${fixedSpecs.material} • ${fixedSpecs.shape} • ${fixedSpecs.size} • ${selectedFeature.name} • ${selectedDegree.name}`
+      variantName: `${fixedSpecs.color} • ${fixedSpecs.material} • ${fixedSpecs.shape} • ${fixedSpecs.size} • ${selectedFeature.name} • ${selectedDegree.name}`
     };
   };
 
@@ -212,7 +213,7 @@ export default function ProductDetailPage({ params }) {
       toastCtx.showToast({
         type: 'success',
         title: 'Đã Thêm Vào Giỏ Hàng!',
-        message: `${quantity}x ${product.name} (${selectedColor}, ${fixedSpecs.material})`,
+        message: `${quantity}x ${product.name} (${fixedSpecs.color}, ${fixedSpecs.material})`,
         image: selectedImage || (product.images?.[0]?.imageUrl),
       });
     }
@@ -407,29 +408,17 @@ export default function ProductDetailPage({ params }) {
           {/* CÁC NHÓM TÙY CHỌN ĐẶC TẢ KỸ THUẬT MẮT KÍNH CHO NGƯỜI DÙNG CHỌN */}
           {/* ========================================================== */}
 
-          {/* 1. MÀU SẮC GỌNG & TRÒNG (FRAME & LENS COLOR) */}
-          <div className="space-y-2.5">
+          {/* 1. MÀU SẮC GỌNG (1 MÀU SẮC CỐ ĐỊNH THEO KÍNH) */}
+          <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-              MÀU SẮC GỌNG: <span className="text-slate-900 font-black">{selectedColor.toUpperCase()}</span>
+              MÀU SẮC GỌNG: <span className="text-slate-900 font-black">{fixedSpecs.color.toUpperCase()}</span>
             </label>
-            <div className="flex flex-wrap gap-2.5">
-              {colorOptions.map((col) => {
-                const isSelected = selectedColor === col;
-                return (
-                  <button
-                    key={col}
-                    type="button"
-                    onClick={() => setSelectedColor(col)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
-                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
-                    }`}
-                  >
-                    {col}
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap gap-2">
+              <div className="px-4 py-2.5 rounded-xl text-xs font-bold bg-black text-white shadow-md flex items-center gap-2 border border-black cursor-default">
+                <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
+                <span>{fixedSpecs.color}</span>
+                <span className="text-[10px] text-emerald-300 font-normal">(Màu chuẩn theo mẫu)</span>
+              </div>
             </div>
           </div>
 
@@ -547,7 +536,7 @@ export default function ProductDetailPage({ params }) {
               <span>Cấu hình bạn đang chọn:</span>
             </div>
             <p className="text-[12px] text-slate-700 leading-relaxed font-medium">
-              <strong className="text-slate-900">{selectedColor}</strong> • {fixedSpecs.material} • {fixedSpecs.shape} • Size {fixedSpecs.size} • {selectedFeature.name} • {selectedDegree.name}
+              <strong className="text-slate-900">{fixedSpecs.color}</strong> • {fixedSpecs.material} • {fixedSpecs.shape} • Size {fixedSpecs.size} • {selectedFeature.name} • {selectedDegree.name}
             </p>
             {extraSurcharge > 0 && (
               <div className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
