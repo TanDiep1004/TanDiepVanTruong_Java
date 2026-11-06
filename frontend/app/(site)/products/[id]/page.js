@@ -77,10 +77,10 @@ export default function ProductDetailPage({ params }) {
 
   const degreeOptions = [
     { name: '0.00 (Không độ / Thời trang)', price: 0 },
-    { name: 'Cận 1.00 - 1.50 độ', price: 100000 },
-    { name: 'Cận 2.00 - 2.50 độ', price: 150000 },
-    { name: 'Cận 3.00 - 4.00 độ', price: 200000 },
-    { name: 'Cắt theo toa riêng bác sĩ', price: 250000 }
+    { name: 'Cận 1.00 - 1.50 độ', price: 0 },
+    { name: 'Cận 2.00 - 2.50 độ', price: 0 },
+    { name: 'Cận 3.00 - 4.00 độ', price: 0 },
+    { name: 'Cắt theo toa riêng bác sĩ', price: 0 }
   ];
 
   useEffect(() => {
