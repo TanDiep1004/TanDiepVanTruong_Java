@@ -23,13 +23,37 @@ export default function ProductDetailPage({ params }) {
   const [selectedImage, setSelectedImage] = useState('');
   const [quantity, setQuantity] = useState(1);
 
-  // Các nhóm tùy chọn tương tác trực quan (Interactive Option Selectors)
+  // Các nhóm tùy chọn tương tác trực quan (Interactive Customer Selectors)
   const [selectedColor, setSelectedColor] = useState('Đen Nhám Tròng Prizm Black');
-  const [selectedMaterial, setSelectedMaterial] = useState({ name: 'Nhựa Acetate Cao Cấp', price: 0 });
-  const [selectedShape, setSelectedShape] = useState('Phi Công (Aviator)');
-  const [selectedSize, setSelectedSize] = useState('Tiêu Chuẩn (52-18-140mm)');
   const [selectedFeature, setSelectedFeature] = useState({ name: 'Tròng Tiêu Chuẩn CR-39 UV400', price: 0 });
   const [selectedDegree, setSelectedDegree] = useState({ name: '0.00 (Không độ / Thời trang)', price: 0 });
+
+  // Tự động nhận diện thông số cố định theo mẫu kính (1 loại Chất liệu, Kiểu dáng, Kích thước)
+  const detectProductSpecs = (prod) => {
+    if (!prod) return { material: 'Nhựa Acetate Cao Cấp', shape: 'Phi Công (Aviator)', size: '54-18-140 mm (Tiêu chuẩn)' };
+    const text = `${prod.name || ''} ${prod.description || ''} ${prod.content || ''}`.toLowerCase();
+    
+    let material = 'Nhựa Acetate Cao Cấp';
+    if (text.includes('titanium')) material = 'Titanium Siêu Nhẹ (Chống gỉ sét)';
+    else if (text.includes('tr90') || text.includes('nhựa dẻo')) material = 'Nhựa dẻo TR90 Siêu bền';
+    else if (text.includes('nhôm') || text.includes('magie') || text.includes('thể thao')) material = 'Hợp kim Nhôm - Magie Thể Thao';
+    else if (text.includes('kim loại') || text.includes('metal') || text.includes('gold') || text.includes('silver') || text.includes('viền kim loại')) material = 'Kim loại cao cấp mạ Crom/Gold';
+
+    let shape = 'Phi Công (Aviator)';
+    if (text.includes('square') || text.includes('vuông')) shape = 'Vuông (Square)';
+    else if (text.includes('round') || text.includes('tròn')) shape = 'Tròn (Round)';
+    else if (text.includes('rectangle') || text.includes('chữ nhật')) shape = 'Chữ Nhật (Rectangle)';
+    else if (text.includes('cat') || text.includes('mắt mèo')) shape = 'Mắt Mèo (Cat-Eye)';
+    else if (text.includes('aviator') || text.includes('phi công')) shape = 'Phi Công (Aviator)';
+
+    let size = '54-18-140 mm (Tiêu chuẩn)';
+    if (text.includes('aviator') || text.includes('58')) size = '58-14-145 mm (Cỡ lớn Aviator)';
+    else if (text.includes('50') || text.includes('nhỏ')) size = '50-16-135 mm (Cỡ nhỏ)';
+
+    return { material, shape, size };
+  };
+
+  const fixedSpecs = detectProductSpecs(product);
 
   // Danh mục tùy chọn có sẵn
   const defaultColors = [
@@ -40,30 +64,6 @@ export default function ProductDetailPage({ params }) {
     'Đồi Mồi (Tortoise Havana)',
     'Bạc Sang Trọng (Silver)',
     'Xám Trong Suốt (Crystal Grey)'
-  ];
-
-  const materialOptions = [
-    { name: 'Nhựa Acetate Cao Cấp', price: 0 },
-    { name: 'Titanium Siêu Nhẹ (Chống gỉ sét)', price: 500000 },
-    { name: 'Nhựa dẻo TR90 Siêu bền', price: 150000 },
-    { name: 'Kim loại mạ Crom / Niken', price: 100000 },
-    { name: 'Hợp kim Nhôm - Magie Thể Thao', price: 350000 }
-  ];
-
-  const shapeOptions = [
-    'Phi Công (Aviator)',
-    'Vuông (Square)',
-    'Tròn (Round)',
-    'Chữ Nhật (Rectangle)',
-    'Mắt Mèo (Cat-Eye)',
-    'Đa Giác (Polygon)'
-  ];
-
-  const sizeOptions = [
-    'Tiêu Chuẩn (52-18-140mm)',
-    'Cỡ Nhỏ (50-16-135mm)',
-    'Cỡ Vừa (54-18-145mm)',
-    'Cỡ Lớn Aviator (58-14-145mm)'
   ];
 
   const featureOptions = [
@@ -177,9 +177,9 @@ export default function ProductDetailPage({ params }) {
   const variantColors = product.variants ? product.variants.map(v => v.color).filter(Boolean) : [];
   const colorOptions = Array.from(new Set([...variantColors, ...defaultColors]));
 
-  // Tính toán đơn giá realtime: Giá gốc sản phẩm + Phụ phí tùy chọn (Chất liệu + Tính năng tròng + Độ cận)
+  // Tính toán đơn giá realtime: Giá gốc sản phẩm + Phụ phí tính năng tròng kính (Độ cận & Chất liệu không tăng giá)
   const basePrice = product.price ? Number(product.price) : 1500000;
-  const extraSurcharge = (selectedMaterial?.price || 0) + (selectedFeature?.price || 0) + (selectedDegree?.price || 0);
+  const extraSurcharge = (selectedFeature?.price || 0);
   const displayPrice = basePrice + extraSurcharge;
   const originalPrice = product.originalPrice 
     ? Number(product.originalPrice) + extraSurcharge 
@@ -193,15 +193,15 @@ export default function ProductDetailPage({ params }) {
   // Gom đầy đủ các tùy chọn người dùng đã chọn
   const buildSelectedVariant = () => {
     return {
-      id: `${product.id}-${selectedColor}-${selectedMaterial.name}-${selectedSize}-${selectedDegree.name}`.replace(/\s+/g, '-'),
+      id: `${product.id}-${selectedColor}-${fixedSpecs.material}-${fixedSpecs.size}-${selectedDegree.name}`.replace(/\s+/g, '-'),
       color: selectedColor,
-      material: selectedMaterial.name,
-      shape: selectedShape,
-      size: selectedSize,
+      material: fixedSpecs.material,
+      shape: fixedSpecs.shape,
+      size: fixedSpecs.size,
       feature: selectedFeature.name,
       degree: selectedDegree.name,
       price: displayPrice,
-      variantName: `${selectedColor} • ${selectedMaterial.name} • ${selectedShape} • ${selectedSize} • ${selectedFeature.name} • ${selectedDegree.name}`
+      variantName: `${selectedColor} • ${fixedSpecs.material} • ${fixedSpecs.shape} • ${fixedSpecs.size} • ${selectedFeature.name} • ${selectedDegree.name}`
     };
   };
 
@@ -212,7 +212,7 @@ export default function ProductDetailPage({ params }) {
       toastCtx.showToast({
         type: 'success',
         title: 'Đã Thêm Vào Giỏ Hàng!',
-        message: `${quantity}x ${product.name} (${selectedColor}, ${selectedMaterial.name}, ${selectedFeature.name})`,
+        message: `${quantity}x ${product.name} (${selectedColor}, ${fixedSpecs.material})`,
         image: selectedImage || (product.images?.[0]?.imageUrl),
       });
     }
@@ -433,88 +433,44 @@ export default function ProductDetailPage({ params }) {
             </div>
           </div>
 
-          {/* 2. CHẤT LIỆU GỌNG (FRAME MATERIAL) */}
-          <div className="space-y-2.5">
+          {/* 2. CHẤT LIỆU GỌNG (1 LOẠI CỐ ĐỊNH THEO TỪNG MẪU KÍNH) */}
+          <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-              CHẤT LIỆU GỌNG: <span className="text-slate-900 font-black">{selectedMaterial.name.toUpperCase()}</span>
+              CHẤT LIỆU GỌNG: <span className="text-slate-900 font-black">{fixedSpecs.material.toUpperCase()}</span>
             </label>
-            <div className="flex flex-wrap gap-2.5">
-              {materialOptions.map((mat) => {
-                const isSelected = selectedMaterial.name === mat.name;
-                return (
-                  <button
-                    key={mat.name}
-                    type="button"
-                    onClick={() => setSelectedMaterial(mat)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                      isSelected
-                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
-                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
-                    }`}
-                  >
-                    <span>{mat.name}</span>
-                    {mat.price > 0 && (
-                      <span className={`text-[10px] font-extrabold px-1.5 py-0.5 rounded ${
-                        isSelected ? 'bg-emerald-500/30 text-emerald-200' : 'bg-emerald-50 text-emerald-600'
-                      }`}>
-                        +{mat.price.toLocaleString('vi-VN')} đ
-                      </span>
-                    )}
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap gap-2">
+              <div className="px-4 py-2.5 rounded-xl text-xs font-bold bg-black text-white shadow-md flex items-center gap-2 border border-black cursor-default">
+                <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
+                <span>{fixedSpecs.material}</span>
+                <span className="text-[10px] text-emerald-300 font-normal">(Cố định theo mẫu)</span>
+              </div>
             </div>
           </div>
 
-          {/* 3. KIỂU DÁNG GỌNG (FRAME SHAPE) */}
-          <div className="space-y-2.5">
+          {/* 3. KIỂU DÁNG GỌNG (1 KIỂU DÁNG CỐ ĐỊNH THEO THIẾT KẾ) */}
+          <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-              KIỂU DÁNG GỌNG: <span className="text-slate-900 font-black">{selectedShape.toUpperCase()}</span>
+              KIỂU DÁNG GỌNG: <span className="text-slate-900 font-black">{fixedSpecs.shape.toUpperCase()}</span>
             </label>
-            <div className="flex flex-wrap gap-2.5">
-              {shapeOptions.map((shape) => {
-                const isSelected = selectedShape === shape;
-                return (
-                  <button
-                    key={shape}
-                    type="button"
-                    onClick={() => setSelectedShape(shape)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
-                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
-                    }`}
-                  >
-                    {shape}
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap gap-2">
+              <div className="px-4 py-2.5 rounded-xl text-xs font-bold bg-slate-900 text-white shadow-md flex items-center gap-2 border border-slate-900 cursor-default">
+                <Check className="w-3.5 h-3.5 text-emerald-400 stroke-[3]" />
+                <span>{fixedSpecs.shape}</span>
+                <span className="text-[10px] text-slate-300 font-normal">(Chuẩn form dáng)</span>
+              </div>
             </div>
           </div>
 
-          {/* 4. KÍCH THƯỚC GỌNG (FRAME SIZE / DIMENSIONS) */}
-          <div className="space-y-2.5">
+          {/* 4. KÍCH THƯỚC GỌNG (THÔNG SỐ TIÊU CHUẨN) */}
+          <div className="space-y-2">
             <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
-              KÍCH THƯỚC: <span className="text-slate-900 font-black">{selectedSize.toUpperCase()}</span>
+              THÔNG SỐ KÍCH THƯỚC: <span className="text-slate-900 font-black">{fixedSpecs.size.toUpperCase()}</span>
             </label>
-            <div className="flex flex-wrap gap-2.5">
-              {sizeOptions.map((size) => {
-                const isSelected = selectedSize === size;
-                return (
-                  <button
-                    key={size}
-                    type="button"
-                    onClick={() => setSelectedSize(size)}
-                    className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
-                      isSelected
-                        ? 'bg-black text-white shadow-lg shadow-slate-500/20 scale-105 border border-black'
-                        : 'bg-white text-slate-700 border border-slate-200 hover:border-slate-400'
-                    }`}
-                  >
-                    {size}
-                  </button>
-                );
-              })}
+            <div className="flex flex-wrap gap-2">
+              <div className="px-4 py-2.5 rounded-xl text-xs font-bold bg-white text-slate-800 border border-slate-300 shadow-sm flex items-center gap-2 cursor-default">
+                <span>{fixedSpecs.size}</span>
+                <span className="text-[10px] text-slate-500 font-normal">(Tiêu chuẩn)</span>
+              </div>
             </div>
           </div>
 
@@ -591,7 +547,7 @@ export default function ProductDetailPage({ params }) {
               <span>Cấu hình bạn đang chọn:</span>
             </div>
             <p className="text-[12px] text-slate-700 leading-relaxed font-medium">
-              <strong className="text-slate-900">{selectedColor}</strong> • {selectedMaterial.name} • {selectedShape} • Size {selectedSize} • {selectedFeature.name} • {selectedDegree.name}
+              <strong className="text-slate-900">{selectedColor}</strong> • {fixedSpecs.material} • {fixedSpecs.shape} • Size {fixedSpecs.size} • {selectedFeature.name} • {selectedDegree.name}
             </p>
             {extraSurcharge > 0 && (
               <div className="text-[11px] text-emerald-600 font-bold flex items-center gap-1">
