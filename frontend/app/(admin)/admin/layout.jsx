@@ -14,6 +14,12 @@ export default function AdminLayout({ children }) {
 
   useEffect(() => {
     setMounted(true);
+
+    if (pathname === '/admin/login') {
+      router.replace('/login');
+      return;
+    }
+
     const token = getToken();
 
     if (!token) {
@@ -30,6 +36,10 @@ export default function AdminLayout({ children }) {
 
     setAuthorized(true);
   }, [pathname, router]);
+
+  if (pathname === '/admin/login') {
+    return children;
+  }
 
   if (!mounted || !authorized) {
     return (
