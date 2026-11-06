@@ -126,8 +126,12 @@ function ProductsContent() {
     }
 
     // 3. Brand
-    if (selectedBrand !== 'ALL' && p.brand?.name !== selectedBrand) {
-      return false;
+    if (selectedBrand !== 'ALL') {
+      const pBrand = (p.brand?.name || '').toLowerCase();
+      const selBrand = selectedBrand.toLowerCase();
+      if (pBrand !== selBrand && !pBrand.includes(selBrand) && !selBrand.includes(pBrand)) {
+        return false;
+      }
     }
 
     // 4. Price
@@ -138,29 +142,55 @@ function ProductsContent() {
 
     // 5. Giới tính (Gender)
     if (genderFilter !== 'ALL') {
-      if (genderFilter === 'NAM' && !fullText.includes('nam') && !fullText.includes('men')) return false;
-      if (genderFilter === 'NU' && !fullText.includes('nữ') && !fullText.includes('nu') && !fullText.includes('women')) return false;
-      if (genderFilter === 'UNISEX' && !fullText.includes('unisex') && (fullText.includes('nam') && fullText.includes('nữ'))) return false;
+      const isUnisex = fullText.includes('unisex') || (fullText.includes('nam') && fullText.includes('nữ'));
+      if (genderFilter === 'NAM' && !fullText.includes('nam') && !fullText.includes('men') && !isUnisex) return false;
+      if (genderFilter === 'NU' && !fullText.includes('nữ') && !fullText.includes('nu') && !fullText.includes('women') && !fullText.includes('phái đẹp') && !isUnisex) return false;
+      if (genderFilter === 'UNISEX' && !isUnisex) return false;
     }
 
     // 6. Kiểu dáng gọng (Frame Shape)
     if (shapeFilter !== 'ALL') {
       const s = shapeFilter.toLowerCase();
-      if (!fullText.includes(s)) return false;
+      if (s === 'tròn') {
+        const isRound = fullText.includes('gọng tròn') || fullText.includes('dáng tròn') || fullText.includes('kính tròn') || fullText.includes('round') || fullText.includes('bo-tròn');
+        if (!isRound) return false;
+      } else if (s === 'mắt mèo') {
+        const isCatEye = fullText.includes('mắt mèo') || fullText.includes('cat-eye') || fullText.includes('cánh bướm');
+        if (!isCatEye) return false;
+      } else if (s === 'chữ nhật') {
+        const isRect = fullText.includes('chữ nhật') || fullText.includes('rectangle');
+        if (!isRect) return false;
+      } else if (s === 'aviator') {
+        const isAviator = fullText.includes('aviator') || fullText.includes('phi công');
+        if (!isAviator) return false;
+      } else if (s === 'vuông') {
+        const isSquare = fullText.includes('vuông') || fullText.includes('square');
+        if (!isSquare) return false;
+      } else {
+        if (!fullText.includes(s)) return false;
+      }
     }
 
     // 7. Chất liệu gọng (Frame Material)
     if (materialFilter !== 'ALL') {
       const m = materialFilter.toLowerCase();
-      if (!fullText.includes(m)) return false;
+      if (m === 'titanium') {
+        if (!fullText.includes('titanium') && !fullText.includes('titan')) return false;
+      } else if (m === 'tr90') {
+        if (!fullText.includes('tr90') && !fullText.includes('nhựa dẻo') && !fullText.includes('o-matter')) return false;
+      } else if (m === 'kim loại') {
+        if (!fullText.includes('kim loại') && !fullText.includes('metal') && !fullText.includes('mạ vàng') && !fullText.includes('mạ bạc')) return false;
+      } else {
+        if (!fullText.includes(m)) return false;
+      }
     }
 
     // 8. Tính năng bảo vệ tròng kính (Lens Features)
     if (featureFilter !== 'ALL') {
-      if (featureFilter === 'UV' && !fullText.includes('uv')) return false;
-      if (featureFilter === 'BLUE' && !fullText.includes('xanh') && !fullText.includes('blue')) return false;
-      if (featureFilter === 'PHOTO' && !fullText.includes('đổi màu') && !fullText.includes('photochromic')) return false;
-      if (featureFilter === 'AR' && !fullText.includes('chống lóa') && !fullText.includes('phản quang')) return false;
+      if (featureFilter === 'UV' && !fullText.includes('uv') && !fullText.includes('uv400')) return false;
+      if (featureFilter === 'BLUE' && !fullText.includes('xanh') && !fullText.includes('blue') && !fullText.includes('bluecontrol')) return false;
+      if (featureFilter === 'PHOTO' && !fullText.includes('đổi màu') && !fullText.includes('photochromic') && !fullText.includes('transitions')) return false;
+      if (featureFilter === 'AR' && !fullText.includes('chống lóa') && !fullText.includes('chống chói') && !fullText.includes('phản quang') && !fullText.includes('phân cực') && !fullText.includes('polarized')) return false;
     }
 
     return true;
